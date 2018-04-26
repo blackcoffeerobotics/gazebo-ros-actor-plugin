@@ -23,6 +23,8 @@ class GazeboRosActor : public ModelPlugin
   /// \brief Constructor
   public: GazeboRosActor();
 
+  public: ~GazeboRosActor();
+
     /// \brief Load the actor plugin.
     /// \param[in] _model Pointer to the parent model.
     /// \param[in] _sdf Pointer to the plugin's SDF elements.
@@ -41,6 +43,8 @@ class GazeboRosActor : public ModelPlugin
 
   private: void QueueThread();
 
+  private: void VelQueueThread();
+
   private: void ReadTrajectoryFile();
 
   private: ros::NodeHandle *ros_node_;
@@ -49,11 +53,16 @@ class GazeboRosActor : public ModelPlugin
   
   private: ros::Subscriber vel_sub_;
 
-  /// \brief Custom Callback Queue
+  /// \brief Custom Callback Queue for activating actor
   private: ros::CallbackQueue queue_;
+
+  /// \brief Custom Callback Queue for guide vel
+  private: ros::CallbackQueue vel_queue_;
 
   /// \brief Custom Callback Queue thread
   private: boost::thread callbackQueueThread_;
+
+  private: boost::thread velCallbackQueueThread_;
 
   private: std::string topic_;
 

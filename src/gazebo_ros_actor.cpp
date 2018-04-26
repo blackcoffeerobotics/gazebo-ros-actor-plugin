@@ -15,6 +15,18 @@ GazeboRosActor::GazeboRosActor()
 {
 }
 
+GazeboRosActor::~GazeboRosActor()
+{
+  this->queue_.clear();
+  this->queue_.disable();
+  this->vel_queue_.clear();
+  this->vel_queue_.disable();
+  this->callbackQueueThread_.join();
+  this->velCallbackQueueThread_.join();  
+  this->ros_node_->shutdown();
+  delete this->ros_node_;
+}
+
 /////////////////////////////////////////////////
 void GazeboRosActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
@@ -76,12 +88,15 @@ void GazeboRosActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   // subscribe to the speed of the guide
   ros::SubscribeOptions vel_so = ros::SubscribeOptions::create<geometry_msgs::Twist>(vel_topic_, 1,
                                                                             boost::bind(&GazeboRosActor::VelCallback, this, _1),
-                                                                            ros::VoidPtr(), &queue_);
+                                                                            ros::VoidPtr(), &vel_queue_);
   this->vel_sub_ = ros_node_->subscribe(vel_so);
 
   // start custom queue for actor
   this->callbackQueueThread_ =
       boost::thread(boost::bind(&GazeboRosActor::QueueThread, this));
+
+  this->velCallbackQueueThread_ =
+      boost::thread(boost::bind(&GazeboRosActor::VelQueueThread, this));
 
   this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
           std::bind(&GazeboRosActor::OnUpdate, this, std::placeholders::_1)));
@@ -117,7 +132,7 @@ void GazeboRosActor::OnActive(const std_msgs::String::ConstPtr& msg)
 void GazeboRosActor::VelCallback(const geometry_msgs::Twist::ConstPtr &msg)
 {
   guide_vel_.Pos().X() = msg->linear.x;
-  guide_vel_.Pos().Y() = msg->linear.x;
+  guide_vel_.Pos().Y() = msg->linear.y;
   guide_vel_.Rot().Euler().Z() = msg->angular.z;
 }
 
@@ -183,6 +198,14 @@ void GazeboRosActor::QueueThread()
 
   while (this->ros_node_->ok())
     this->queue_.callAvailable(ros::WallDuration(timeout));
+}
+
+void GazeboRosActor::VelQueueThread()
+{
+  static const double timeout = 0.01;
+
+  while (this->ros_node_->ok())
+    this->vel_queue_.callAvailable(ros::WallDuration(timeout));
 }
 
 void GazeboRosActor::ReadTrajectoryFile()
