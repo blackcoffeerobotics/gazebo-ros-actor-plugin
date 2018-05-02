@@ -79,7 +79,7 @@ void GazeboRosActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->ros_node_ = new ros::NodeHandle();
 
   // subscribe to the speed of the guide
-  ros::SubscribeOptions vel_so = ros::SubscribeOptions::create<geometry_msgs::Twist>(vel_topic_, 1,
+  ros::SubscribeOptions vel_so = ros::SubscribeOptions::create<geometry_msgs::Twist>(vel_topic_, 1000,
                                                                                      boost::bind(&GazeboRosActor::VelCallback, this, _1),
                                                                                      ros::VoidPtr(), &vel_queue_);
   this->vel_sub_ = ros_node_->subscribe(vel_so);
@@ -114,22 +114,23 @@ void GazeboRosActor::Reset()
 
 void GazeboRosActor::VelCallback(const geometry_msgs::Twist::ConstPtr &msg)
 {
-  ignition::math::Vector3d cmd;
-  if (first_run_)
+  if (this->first_run_)
   {
     /// Insert initial commands
     for (int i = 0; i < 1000*2/0.4; i++)
     {
+      ignition::math::Vector3d cmd;
       cmd.X() = 0.4;
       cmd.Z() = 0.0;
-      cmd_queue_.push(cmd);
+      this->cmd_queue_.push(cmd);
     }
-    first_run_ = false;
+    this->first_run_ = false;
   }
 
-  cmd.X() = msg->linear.x;
-  cmd.Z() = msg->angular.z;
-  cmd_queue_.push(cmd);
+  ignition::math::Vector3d vel_cmd;
+  vel_cmd.X() = msg->linear.x;
+  vel_cmd.Z() = msg->angular.z;
+  this->cmd_queue_.push(vel_cmd);
 }
 
 /////////////////////////////////////////////////
@@ -139,17 +140,18 @@ void GazeboRosActor::OnUpdate(const common::UpdateInfo &_info)
   double dt = (_info.simTime - this->last_update).Double();
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
-  if (!cmd_queue_.empty())
+  ROS_INFO_STREAM(this->cmd_queue_.size() << " " << this->cmd_queue_.front().X() << " " << this->cmd_queue_.front().Z());
+  if (!this->cmd_queue_.empty())
   {
-    this->guide_vel_.Pos().X() = cmd_queue_.front().X();
-    this->guide_vel_.Rot() = ignition::math::Quaterniond(0, 0, cmd_queue_.front().Z());
-    cmd_queue_.pop();
+    this->guide_vel_.Pos().X() = this->cmd_queue_.front().X();
+    this->guide_vel_.Rot() = ignition::math::Quaterniond(0, 0, this->cmd_queue_.front().Z());
+    this->cmd_queue_.pop();
   }
 
-  pose.Pos().X() += this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z()-1.57)*dt;
-  pose.Pos().Y() -= this->guide_vel_.Pos().X()*sin(pose.Rot().Euler().Z()-1.57)*dt;
+  pose.Pos().X() += this->guide_vel_.Pos().X()*sin(pose.Rot().Euler().Z())*dt;
+  pose.Pos().Y() -= this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
 
-  pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()-this->guide_vel_.Rot().Euler().Z()*dt);
+  pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt);
 
   double distanceTraveled = (pose.Pos() - this->actor->WorldPose().Pos()).Length();
 
