@@ -17,11 +17,8 @@ GazeboRosActor::GazeboRosActor()
 
 GazeboRosActor::~GazeboRosActor()
 {
-  this->queue_.clear();
-  this->queue_.disable();
   this->vel_queue_.clear();
   this->vel_queue_.disable();
-  this->callbackQueueThread_.join();
   this->velCallbackQueueThread_.join();
   this->ros_node_->shutdown();
   delete this->ros_node_;
@@ -30,19 +27,13 @@ GazeboRosActor::~GazeboRosActor()
 /////////////////////////////////////////////////
 void GazeboRosActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
-  this->topic_ = "actor_state";
-  if (_sdf->HasElement("topic"))
-  {
-    this->topic_ = _sdf->Get<std::string>("topic");
-  }
-
   this->vel_topic_ = "/cmd_vel_mux/input/navi";
   if (_sdf->HasElement("vel_topic"))
   {
     this->vel_topic_ = _sdf->Get<std::string>("vel_topic");
   }
 
-  this->velocity_ = 0.5;
+  this->velocity_ = 0.4;
   if (_sdf->HasElement("velocity"))
   {
     this->velocity_ = _sdf->Get<double>("velocity");
@@ -83,23 +74,15 @@ void GazeboRosActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   this->Reset();
 
-  this->ros_node_ = new ros::NodeHandle();
+  first_run_ = true;
 
-  // subscribe to the active topic
-  // ros::SubscribeOptions so = ros::SubscribeOptions::create<std_msgs::String>(topic_, 1,
-  //                                                                            boost::bind(&GazeboRosActor::OnActive, this, _1),
-  //                                                                            ros::VoidPtr(), &queue_);
-  // this->sub_ = ros_node_->subscribe(so);
+  this->ros_node_ = new ros::NodeHandle();
 
   // subscribe to the speed of the guide
   ros::SubscribeOptions vel_so = ros::SubscribeOptions::create<geometry_msgs::Twist>(vel_topic_, 1,
                                                                                      boost::bind(&GazeboRosActor::VelCallback, this, _1),
                                                                                      ros::VoidPtr(), &vel_queue_);
   this->vel_sub_ = ros_node_->subscribe(vel_so);
-
-  // start custom queue for actor
-  // this->callbackQueueThread_ =
-  //     boost::thread(boost::bind(&GazeboRosActor::QueueThread, this));
 
   this->velCallbackQueueThread_ =
       boost::thread(boost::bind(&GazeboRosActor::VelQueueThread, this));
@@ -112,7 +95,6 @@ void GazeboRosActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 void GazeboRosActor::Reset()
 {
   this->last_update = 0;
-  this->nav_state_ = "stop";
 
   auto skelAnims = this->actor->SkeletonAnimations();
   if (skelAnims.find(WALKING_ANIMATION) == skelAnims.end())
@@ -130,16 +112,24 @@ void GazeboRosActor::Reset()
   }
 }
 
-void GazeboRosActor::OnActive(const std_msgs::String::ConstPtr &msg)
-{
-  nav_state_ = msg->data;
-}
-
 void GazeboRosActor::VelCallback(const geometry_msgs::Twist::ConstPtr &msg)
 {
-  this->guide_vel_.Pos().X() = msg->linear.x;
-  this->guide_vel_.Pos().Y() = msg->linear.y;
-  this->guide_vel_.Rot() = ignition::math::Quaterniond(0, 0, msg->angular.z);
+  ignition::math::Vector3d cmd;
+  if (first_run_)
+  {
+    /// Insert initial commands
+    for (int i = 0; i < 1000*2/0.4; i++)
+    {
+      cmd.X() = 0.4;
+      cmd.Z() = 0.0;
+      cmd_queue_.push(cmd);
+    }
+    first_run_ = false;
+  }
+
+  cmd.X() = msg->linear.x;
+  cmd.Z() = msg->angular.z;
+  cmd_queue_.push(cmd);
 }
 
 /////////////////////////////////////////////////
@@ -149,69 +139,23 @@ void GazeboRosActor::OnUpdate(const common::UpdateInfo &_info)
   double dt = (_info.simTime - this->last_update).Double();
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
-  pose.Pos().X() += this->guide_vel_.Pos().X() * sin(pose.Rot().Euler().Z()) * dt;
-  pose.Pos().Y() += this->guide_vel_.Pos().X() * cos(pose.Rot().Euler().Z()) * dt;
+  if (!cmd_queue_.empty())
+  {
+    this->guide_vel_.Pos().X() = cmd_queue_.front().X();
+    this->guide_vel_.Rot() = ignition::math::Quaterniond(0, 0, cmd_queue_.front().Z());
+    cmd_queue_.pop();
+  }
 
-  pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z() - this->guide_vel_.Rot().Euler().Z() * dt);
+  pose.Pos().X() += this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z()-1.57)*dt;
+  pose.Pos().Y() -= this->guide_vel_.Pos().X()*sin(pose.Rot().Euler().Z()-1.57)*dt;
 
-  // if(this->nav_state_ == "active")
-  // {
-  //   ignition::math::Vector3d pos = trajectory_.front().Pos() - pose.Pos();
-  //   ignition::math::Vector3d rpy = pose.Rot().Euler();
-  //   if(pos.Length() < 0.05)
-  //   {
-  //     trajectory_.pop();
-  //     pos = trajectory_.front().Pos() - pose.Pos();
-  //   }
-  //   pos = pos.Normalize();
-
-  //   // Compute the yaw orientation
-  //   ignition::math::Angle yaw = atan2(pos.Y(), pos.X()) + 1.5707 - rpy.Z();
-  //   yaw.Normalize();
-
-  //   double duration = (_info.simTime - this->start_time_).Double();
-  //   double dt = (_info.simTime - this->last_update).Double();
-  //   if(this->oscillation_enable_)
-  //   {
-  //     this->oscillation_factor_ = std::abs(std::sin(duration*4*M_PI/10.0));
-  //     pose.Pos() += this->oscillation_factor_*pos*this->velocity_*dt;
-  // //    ROS_INFO_STREAM(this->oscillation_factor_);
-  //   }
-  //   else
-  //   {
-  //     if (std::abs(yaw.Radian()) > IGN_DTOR(10))
-  //     {
-  //       pose.Pos() += pos * this->velocity_ * dt; ///!
-  //       pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+
-  //           yaw.Radian()*0.001);
-  //     }
-  //     else
-  //     {
-  //       pose.Pos() += pos * this->velocity_ * dt;
-  //       pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+yaw.Radian());
-  //     }
-  //   }
-  // }
-  // else
-  // {
-  //   // Add start time until start
-  //   this->start_time_ = _info.simTime;
-  // }
+  pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()-this->guide_vel_.Rot().Euler().Z()*dt);
 
   double distanceTraveled = (pose.Pos() - this->actor->WorldPose().Pos()).Length();
 
   this->actor->SetWorldPose(pose, false, false);
   this->actor->SetScriptTime(this->actor->ScriptTime() + (distanceTraveled * this->animation_factor_));
   this->last_update = _info.simTime;
-}
-
-/////////////////////////////////////////////////
-void GazeboRosActor::QueueThread()
-{
-  static const double timeout = 0.01;
-
-  while (this->ros_node_->ok())
-    this->queue_.callAvailable(ros::WallDuration(timeout));
 }
 
 void GazeboRosActor::VelQueueThread()
