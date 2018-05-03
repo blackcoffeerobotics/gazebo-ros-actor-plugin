@@ -127,10 +127,13 @@ void GazeboRosActor::VelCallback(const geometry_msgs::Twist::ConstPtr &msg)
     this->first_run_ = false;
   }
 
-  ignition::math::Vector3d vel_cmd;
-  vel_cmd.X() = msg->linear.x;
-  vel_cmd.Z() = msg->angular.z;
-  this->cmd_queue_.push(vel_cmd);
+  for (int i = 0; i < 50; i++)
+  {
+    ignition::math::Vector3d vel_cmd;
+    vel_cmd.X() = msg->linear.x;
+    vel_cmd.Z() = msg->angular.z;
+    this->cmd_queue_.push(vel_cmd);
+  }
 }
 
 /////////////////////////////////////////////////
@@ -140,7 +143,6 @@ void GazeboRosActor::OnUpdate(const common::UpdateInfo &_info)
   double dt = (_info.simTime - this->last_update).Double();
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
-  ROS_INFO_STREAM(this->cmd_queue_.size() << " " << this->cmd_queue_.front().X() << " " << this->cmd_queue_.front().Z());
   if (!this->cmd_queue_.empty())
   {
     this->guide_vel_.Pos().X() = this->cmd_queue_.front().X();
