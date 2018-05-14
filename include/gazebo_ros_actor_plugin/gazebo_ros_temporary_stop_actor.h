@@ -2,14 +2,12 @@
 #define GAZEBO_ROS_TEMPORARY_STOP_ACTOR_H
 
 #include <string>
-#include <fstream>
 #include <queue>
 
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <ros/callback_queue.h>
 #include <geometry_msgs/Twist.h>
-#include <nav_msgs/Odometry.h>
 
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/physics/physics.hh"
@@ -25,9 +23,9 @@ class GazeboRosTemporaryStopActor : public ModelPlugin
 
   public: ~GazeboRosTemporaryStopActor();
 
-    /// \brief Load the actor plugin.
-    /// \param[in] _model Pointer to the parent model.
-    /// \param[in] _sdf Pointer to the plugin's SDF elements.
+  /// \brief Load the actor plugin.
+  /// \param[in] _model Pointer to the parent model.
+  /// \param[in] _sdf Pointer to the plugin's SDF elements.
   public: virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
 
     // Documentation Inherited.
@@ -35,10 +33,8 @@ class GazeboRosTemporaryStopActor : public ModelPlugin
 
   private: void VelCallback(const geometry_msgs::Twist::ConstPtr &msg);
 
-  private: void OdomCallback(const nav_msgs::Odometry::ConstPtr &msg);
-
-    /// \brief Function that is called every update cycle.
-    /// \param[in] _info Timing information
+  /// \brief Function that is called every update cycle.
+  /// \param[in] _info Timing information
   private: void OnUpdate(const common::UpdateInfo &_info);
 
   private: void VelQueueThread();

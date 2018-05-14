@@ -2,14 +2,12 @@
 #define GAZEBO_ROS_ROBOT_FOLLOW_ACTOR_H
 
 #include <string>
-#include <fstream>
 #include <queue>
 
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <ros/callback_queue.h>
 #include <geometry_msgs/Twist.h>
-#include <nav_msgs/Odometry.h>
 
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/physics/physics.hh"

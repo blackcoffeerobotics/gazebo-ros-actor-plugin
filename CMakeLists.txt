@@ -32,9 +32,6 @@ include_directories(
 link_directories(${GAZEBO_LIBRARY_DIRS})
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
-add_library(gazebo_ros_actor src/gazebo_ros_actor.cpp)
-target_link_libraries(gazebo_ros_actor ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
-
 add_library(gazebo_ros_path_follow_actor src/gazebo_ros_path_follow_actor.cpp)
 target_link_libraries(gazebo_ros_path_follow_actor ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
