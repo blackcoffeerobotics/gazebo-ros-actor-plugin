@@ -5,7 +5,6 @@
 #include <queue>
 
 #include <ros/ros.h>
-#include <ros/package.h>
 #include <ros/callback_queue.h>
 #include <geometry_msgs/Twist.h>
 

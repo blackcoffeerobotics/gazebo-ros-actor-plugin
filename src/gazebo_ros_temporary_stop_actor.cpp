@@ -51,8 +51,6 @@ void GazeboRosTemporaryStopActor::Load(physics::ModelPtr _model, sdf::ElementPtr
     this->oscillation_enable_ = _sdf->Get<bool>("oscillation_enable");
   }
 
-  // this->ReadTrajectoryFile();
-
   // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
   {
@@ -67,8 +65,6 @@ void GazeboRosTemporaryStopActor::Load(physics::ModelPtr _model, sdf::ElementPtr
   this->world = this->actor->GetWorld();
 
   this->Reset();
-
-  first_run_ = true;
 
   this->ros_node_ = new ros::NodeHandle();
 
@@ -89,6 +85,8 @@ void GazeboRosTemporaryStopActor::Load(physics::ModelPtr _model, sdf::ElementPtr
 void GazeboRosTemporaryStopActor::Reset()
 {
   this->last_update = 0;
+  this->first_run_ = true;
+  this->temp_stop_ = false;
 
   auto skelAnims = this->actor->SkeletonAnimations();
   if (skelAnims.find(WALKING_ANIMATION) == skelAnims.end())
@@ -119,7 +117,6 @@ void GazeboRosTemporaryStopActor::VelCallback(const geometry_msgs::Twist::ConstP
       this->cmd_queue_.push(cmd);
     }
     this->first_run_ = false;
-    time_start = common::Time::GetWallTime();
   }
 
   // To make the frequency of command match update event
@@ -139,13 +136,30 @@ void GazeboRosTemporaryStopActor::OnUpdate(const common::UpdateInfo &_info)
   double dt = (_info.simTime - this->last_update).Double();
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
-  // hack for stopped the actor
-  if ((_info.simTime).Double() > 8.0 && (_info.simTime).Double() < 13.0)
+  // stupid hack for stopping the actor
+  if ((_info.simTime).Double() > 5.0 && (_info.simTime).Double() < 10.0)
   {
-    this->vel_sub_.shutdown();
+    // if stop the actor in first update, stop the subscriber
+    if(!this->temp_stop_)
+      this->vel_sub_.shutdown();
+
+    ROS_INFO("stop");
+    this->temp_stop_ = true;
   }
   else
   {
+    // return from stop state and re-subscribe again
+    if (this->temp_stop_)
+    {
+      // open the subscriber again
+      ros::SubscribeOptions vel_so = ros::SubscribeOptions::create<geometry_msgs::Twist>(vel_topic_, 1000,
+                                                                                         boost::bind(&GazeboRosTemporaryStopActor::VelCallback, this, _1),
+                                                                                         ros::VoidPtr(), &vel_queue_);
+      this->vel_sub_ = ros_node_->subscribe(vel_so);
+      // not entering here again
+      this->temp_stop_ = false;
+    }
+
     if (!this->cmd_queue_.empty())
     {
       this->guide_vel_.Pos().X() = this->cmd_queue_.front().X();
