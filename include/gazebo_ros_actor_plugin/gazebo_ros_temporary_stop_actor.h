@@ -5,7 +5,6 @@
 #include <queue>
 
 #include <ros/ros.h>
-#include <ros/package.h>
 #include <ros/callback_queue.h>
 #include <geometry_msgs/Twist.h>
 
@@ -97,6 +96,9 @@ class GazeboRosTemporaryStopActor : public ModelPlugin
   private: std::queue<ignition::math::Vector3d> cmd_queue_;
 
   private: bool first_run_;
+
+  /// \brief Flag for knowing the actor is stopped
+  private: bool temp_stop_;
 
 };
 }

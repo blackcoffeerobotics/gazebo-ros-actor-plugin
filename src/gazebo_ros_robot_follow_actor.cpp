@@ -45,8 +45,6 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
     this->oscillation_enable_ = _sdf->Get<bool>("oscillation_enable");
   }
 
-  // this->ReadTrajectoryFile();
-
   // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
   {
@@ -61,8 +59,6 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
   this->world = this->actor->GetWorld();
 
   this->Reset();
-
-  first_run_ = true;
 
   this->ros_node_ = new ros::NodeHandle();
 
@@ -83,6 +79,7 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
 void GazeboRosRobotFollowActor::Reset()
 {
   this->last_update = 0;
+  this->first_run_ = true;
 
   auto skelAnims = this->actor->SkeletonAnimations();
   if (skelAnims.find(WALKING_ANIMATION) == skelAnims.end())
