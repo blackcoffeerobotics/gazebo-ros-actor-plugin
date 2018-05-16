@@ -51,6 +51,18 @@ void GazeboRosTemporaryStopActor::Load(physics::ModelPtr _model, sdf::ElementPtr
     this->oscillation_enable_ = _sdf->Get<bool>("oscillation_enable");
   }
 
+  this->time_of_stop_ = 5.0;
+  if (_sdf->HasElement("time_of_stop"))
+  {
+    this->time_of_stop_ = _sdf->Get<double>("time_of_stop");
+  }
+
+  this->stop_duration_ = 5.0;
+  if (_sdf->HasElement("stop_duration"))
+  {
+    this->stop_duration_ = _sdf->Get<double>("stop_duration");
+  }
+
   // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
   {
@@ -137,13 +149,12 @@ void GazeboRosTemporaryStopActor::OnUpdate(const common::UpdateInfo &_info)
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
   // stupid hack for stopping the actor
-  if ((_info.simTime).Double() > 5.0 && (_info.simTime).Double() < 10.0)
+  if ((_info.simTime).Double() > 8.0 && (_info.simTime).Double() < 13.0)
   {
     // if stop the actor in first update, stop the subscriber
     if(!this->temp_stop_)
       this->vel_sub_.shutdown();
 
-    ROS_INFO("stop");
     this->temp_stop_ = true;
   }
   else

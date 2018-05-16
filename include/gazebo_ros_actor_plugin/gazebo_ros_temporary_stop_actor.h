@@ -78,9 +78,6 @@ class GazeboRosTemporaryStopActor : public ModelPlugin
   /// \brief Time of the last update.
   private: common::Time last_update;
 
-  /// \brief Time of the start.
-  private: common::Time time_start;
-
   /// \brief Custom trajectory info.
   private: physics::TrajectoryInfoPtr trajectoryInfo;
 
@@ -90,15 +87,18 @@ class GazeboRosTemporaryStopActor : public ModelPlugin
   /// \brief Variable for control the non-constant velocity.
   private: double oscillation_factor_;
 
-  /// \brief Queue data structure for storing the trajectory data
-  private: std::queue<ignition::math::Pose3d> trajectory_;
-
   private: std::queue<ignition::math::Vector3d> cmd_queue_;
 
   private: bool first_run_;
 
   /// \brief Flag for knowing the actor is stopped
   private: bool temp_stop_;
+
+  /// \brief Time of the actor start to stop its motion
+  private: double time_of_stop_;
+
+  /// \brief Stop time duration
+  private: double stop_duration_;
 
 };
 }
