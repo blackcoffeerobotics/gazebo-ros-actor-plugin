@@ -40,3 +40,6 @@ target_link_libraries(gazebo_ros_robot_follow_actor ${catkin_LIBRARIES} ${GAZEBO
 
 add_library(gazebo_ros_temporary_stop_actor src/gazebo_ros_temporary_stop_actor.cpp)
 target_link_libraries(gazebo_ros_temporary_stop_actor ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+add_library(gazebo_ros_deviate_path_actor src/gazebo_ros_deviate_path_actor.cpp)
+target_link_libraries(gazebo_ros_deviate_path_actor ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
