@@ -95,6 +95,8 @@ class GazeboRosDeviatePathActor : public ModelPlugin
 
   private: double deviate_angle_;
 
+  private: bool start_deviate_;
+
 };
 }
 
