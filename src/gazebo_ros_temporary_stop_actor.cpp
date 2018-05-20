@@ -149,7 +149,7 @@ void GazeboRosTemporaryStopActor::OnUpdate(const common::UpdateInfo &_info)
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
   // stupid hack for stopping the actor
-  if ((_info.simTime).Double() > 8.0 && (_info.simTime).Double() < 13.0)
+  if ((_info.simTime).Double() > this->time_of_stop_ && (_info.simTime).Double() < (this->time_of_stop_+this->stop_duration_))
   {
     // if stop the actor in first update, stop the subscriber
     if(!this->temp_stop_)

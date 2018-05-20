@@ -98,6 +98,7 @@ void GazeboRosDeviatePathActor::Reset()
 {
   this->last_update = 0;
   this->first_run_ = true;
+  this->start_deviate_ = false;
 
   auto skelAnims = this->actor->SkeletonAnimations();
   if (skelAnims.find(WALKING_ANIMATION) == skelAnims.end())
@@ -158,11 +159,20 @@ void GazeboRosDeviatePathActor::OnUpdate(const common::UpdateInfo &_info)
   {
     // change the direction of velocity in a duration
     this->guide_vel_ = frameRotation(this->guide_vel_, this->deviate_angle_);
-    ROS_INFO("deviation");
+    if (!this->start_deviate_)
+    {
+      rpy.Z() += this->deviate_angle_;
+      this->start_deviate_ = true;
+    }
+    pose.Pos().Y() += this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
+  }
+  else
+  {
+    pose.Pos().Y() -= this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
   }
 
   pose.Pos().X() += this->guide_vel_.Pos().X()*sin(pose.Rot().Euler().Z())*dt;
-  pose.Pos().Y() -= this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
+//  pose.Pos().Y() -= this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
   pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt);
 
   double distanceTraveled = (pose.Pos() - this->actor->WorldPose().Pos()).Length();
