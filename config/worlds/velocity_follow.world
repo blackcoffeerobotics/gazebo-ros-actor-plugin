@@ -1,0 +1,34 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <world name="default">
+
+    <!-- A global light source -->
+    <include>
+      <uri>model://sun</uri>
+	    <pose>0 0 0 0 0 0</pose>
+    </include>
+
+    <!-- A ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+<actor name="actor1">
+  <pose>0 0 1.2138 0 0 0</pose>
+  <skin>
+    <filename>moonwalk.dae</filename>
+    <scale>1.0</scale>
+  </skin>
+  <animation name="walking">
+    <filename>walk.dae</filename>
+    <scale>1.000000</scale>
+    <interpolate_x>true</interpolate_x>
+  </animation>
+  <plugin name="actor_plugin" filename="libgazebo_ros_robot_follow_actor.so">
+		<vel_topic>/cmd_vel</vel_topic>
+  </plugin>
+</actor>
+
+  </world>
+</sdf>
