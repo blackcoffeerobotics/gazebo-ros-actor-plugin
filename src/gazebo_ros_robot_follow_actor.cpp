@@ -39,12 +39,6 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
     this->animation_factor_ = _sdf->Get<double>("animation_factor");
   }
 
-  this->oscillation_enable_ = false;
-  if (_sdf->HasElement("oscillation_enable"))
-  {
-    this->oscillation_enable_ = _sdf->Get<bool>("oscillation_enable");
-  }
-
   // Make sure the ROS node for Gazebo has already been initialized
   if (!ros::isInitialized())
   {
@@ -79,7 +73,6 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
 void GazeboRosRobotFollowActor::Reset()
 {
   this->last_update = 0;
-  this->first_run_ = true;
 
   auto skelAnims = this->actor->SkeletonAnimations();
   if (skelAnims.find(WALKING_ANIMATION) == skelAnims.end())
@@ -99,27 +92,10 @@ void GazeboRosRobotFollowActor::Reset()
 
 void GazeboRosRobotFollowActor::VelCallback(const geometry_msgs::Twist::ConstPtr &msg)
 {
-  if (this->first_run_)
-  {
-    // Insert initial commands, assume the robot is in front of the model 2m and 0.4m/s velocity
-    for (int i = 0; i < 1000*2/0.4; i++)
-    {
-      ignition::math::Vector3d cmd;
-      cmd.X() = 0.4;
-      cmd.Z() = 0.0;
-      this->cmd_queue_.push(cmd);
-    }
-    this->first_run_ = false;
-  }
-
-  // To make the frequency of command match update event
-  for (int i = 0; i < 50; i++)
-  {
-    ignition::math::Vector3d vel_cmd;
-    vel_cmd.X() = msg->linear.x;
-    vel_cmd.Z() = msg->angular.z;
-    this->cmd_queue_.push(vel_cmd);
-  }
+  ignition::math::Vector3d vel_cmd;
+  vel_cmd.X() = msg->linear.x;
+  vel_cmd.Z() = msg->angular.z;
+  this->cmd_queue_.push(vel_cmd);
 }
 
 /////////////////////////////////////////////////
