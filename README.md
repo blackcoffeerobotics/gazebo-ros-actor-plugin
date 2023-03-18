@@ -6,7 +6,11 @@
     
 ## Run instructions
 
+    rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+
     roslaunch gazebo_ros_actor_plugin sim.launch
+
+    rosrun gazebo_ros_actor_plugin path_publisher.py
 
 ### ROS API
 
