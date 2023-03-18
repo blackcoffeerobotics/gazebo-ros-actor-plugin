@@ -1,6 +1,9 @@
 #include <gazebo_ros_actor_plugin/gazebo_ros_robot_follow_actor.h>
 
 #include <functional>
+#include <cmath>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 
 #include <ignition/math.hh>
 #include "gazebo/physics/physics.hh"
@@ -20,18 +23,34 @@ GazeboRosRobotFollowActor::~GazeboRosRobotFollowActor()
   this->vel_queue_.clear();
   this->vel_queue_.disable();
   this->velCallbackQueueThread_.join();
+
+  // Added for path
+  this->path_queue_.clear();
+  this->path_queue_.disable();
+  this->pathCallbackQueueThread_.join();
+
   this->ros_node_->shutdown();
-  delete this->ros_node_;
+  delete this->ros_node_; 
 }
 
 /////////////////////////////////////////////////
 void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
+
+  gzdbg << "Load function debug message"<< std::endl;
+
   this->vel_topic_ = "/cmd_vel_mux/input/navi";
   if (_sdf->HasElement("vel_topic"))
   {
     this->vel_topic_ = _sdf->Get<std::string>("vel_topic");
   }
+
+  // Added for path
+  this->path_topic_ = "/cmd_path";
+  // if (_sdf->HasElement("path_topic"))
+  // {
+  //   this->path_topic_ = _sdf->Get<std::string>("path_topic");
+  // }
 
   this->animation_factor_ = 4.0;
   if (_sdf->HasElement("animation_factor"))
@@ -52,6 +71,10 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
   this->actor = boost::dynamic_pointer_cast<physics::Actor>(_model);
   this->world = this->actor->GetWorld();
 
+  // Set index to zero
+  this->idx = 0;
+  this->tolerance = 0.1;
+
   this->Reset();
 
   this->ros_node_ = new ros::NodeHandle();
@@ -65,6 +88,15 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
   this->velCallbackQueueThread_ =
       boost::thread(boost::bind(&GazeboRosRobotFollowActor::VelQueueThread, this));
 
+  // subscribe to the pose of the guide
+  ros::SubscribeOptions path_so = ros::SubscribeOptions::create<nav_msgs::Path>(path_topic_, 1000,
+                                                                                     boost::bind(&GazeboRosRobotFollowActor::PathCallback, this, _1),
+                                                                                     ros::VoidPtr(), &path_queue_);
+  this->path_sub_ = ros_node_->subscribe(path_so);
+
+  this->pathCallbackQueueThread_ =
+      boost::thread(boost::bind(&GazeboRosRobotFollowActor::PathQueueThread, this));
+
   this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
       std::bind(&GazeboRosRobotFollowActor::OnUpdate, this, std::placeholders::_1)));
 }
@@ -72,7 +104,23 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
 /////////////////////////////////////////////////
 void GazeboRosRobotFollowActor::Reset()
 {
+
   this->last_update = 0;
+  this->path_velocity = 1;
+  
+  gzdbg << "Improve the initialization of target poses vector to current pose. Format: [x,y,yaw]"<< std::endl;
+  this->target_poses.push_back(ignition::math::Vector3d(2.0, 0.0, 0.0));
+
+  if (this->target_poses.empty()) {
+      gzdbg << "Target poses vector is empty" << std::endl;
+  }
+
+  if (this->idx >= this->target_poses.size()) {
+      gzdbg << "Reached end of target poses vector" << std::endl;
+  }
+ 
+  this->target_pose = this->target_poses.at(this->idx);
+  // this->target_pose = this->target_poses[this->idx];
 
   auto skelAnims = this->actor->SkeletonAnimations();
   if (skelAnims.find(WALKING_ANIMATION) == skelAnims.end())
@@ -88,6 +136,9 @@ void GazeboRosRobotFollowActor::Reset()
 
     this->actor->SetCustomTrajectory(this->trajectoryInfo);
   }
+
+  // TODO: Make changes as per the second subscriber
+
 }
 
 void GazeboRosRobotFollowActor::VelCallback(const geometry_msgs::Twist::ConstPtr &msg)
@@ -98,30 +149,124 @@ void GazeboRosRobotFollowActor::VelCallback(const geometry_msgs::Twist::ConstPtr
   this->cmd_queue_.push(vel_cmd);
 }
 
+void GazeboRosRobotFollowActor::PathCallback(const nav_msgs::Path::ConstPtr &msg)
+{
+  // Extract the poses from the Path message
+  const std::vector<geometry_msgs::PoseStamped>& poses = msg->poses;
+
+  gzdbg << "PathCallback function!" << std::endl;
+
+  // Extract the x, y, and yaw from each pose and store it as a target
+  for (size_t i = 0; i < poses.size(); ++i)
+  {
+    const geometry_msgs::Pose& pose = poses[i].pose;
+    const double x = pose.position.x;
+    const double y = pose.position.y;
+
+    // Convert quaternion to Euler angles
+    tf2::Quaternion quat(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+    tf2::Matrix3x3 mat(quat);
+    double roll, pitch, yaw;
+    mat.getRPY(roll, pitch, yaw);
+    // gzdbg << "x = " << x << ", y = " << y << ", yaw = " << yaw << std::endl;
+    this->target_poses.push_back(ignition::math::Vector3d(x, y, yaw));
+  }
+}
+
 /////////////////////////////////////////////////
 void GazeboRosRobotFollowActor::OnUpdate(const common::UpdateInfo &_info)
 {
-  ignition::math::Pose3d pose = this->actor->WorldPose();
+  // Time delta
   double dt = (_info.simTime - this->last_update).Double();
+  
+  ignition::math::Pose3d pose = this->actor->WorldPose();
+  
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
-  if (!this->cmd_queue_.empty())
-  {
-    this->guide_vel_.Pos().X() = this->cmd_queue_.front().X();
-    this->guide_vel_.Rot() = ignition::math::Quaterniond(0, 0, this->cmd_queue_.front().Z());
-    this->cmd_queue_.pop();
-  }
+  // IF cmd_vel
+  // if (!this->cmd_queue_.empty())
+  // {
+  //   this->guide_vel_.Pos().X() = this->cmd_queue_.front().X();
+  //   this->guide_vel_.Rot() = ignition::math::Quaterniond(0, 0, this->cmd_queue_.front().Z());
+  //   this->cmd_queue_.pop();
+  // }
 
-  pose.Pos().X() += this->guide_vel_.Pos().X()*sin(pose.Rot().Euler().Z())*dt;
-  pose.Pos().Y() -= this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
+  // pose.Pos().X() += this->guide_vel_.Pos().X()*sin(pose.Rot().Euler().Z())*dt;
+  // pose.Pos().Y() -= this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
 
   pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt);
 
+  /////////////////////////////////////////////////////////////////////////////////////////
+
+  // // IF cmd_path
+
+  ignition::math::Vector2d target_pos_2d(this->target_pose.X(), this->target_pose.Y());
+  ignition::math::Vector2d current_pos_2d(pose.Pos().X(), pose.Pos().Y());
+  ignition::math::Vector2d pos = target_pos_2d - current_pos_2d;
+  double distance = pos.Length();
+
+  // Choose a new target position if the actor has reached its current target.
+  if (distance < this->tolerance)
+  {
+    // Otherwise change target
+    if (this->idx < this->target_poses.size() - 1){
+    this->ChooseNewTarget();
+    gzdbg << "Pursuing next target!" << std::endl; 
+    pos.X() = this->target_pose.X() - pose.Pos().X();
+    pos.Y() = this->target_pose.Y() - pose.Pos().Y();    
+    }
+    // If all targets have been accomplished, move no further
+    else{
+      gzdbg << "Last target reached!" << std::endl; 
+      pos.X() = 0;
+      pos.Y() = 0;
+    }
+  }
+
+  // // Normalize the direction vector
+  // pos = pos.Normalize();
+  // pose.Pos() += pos * this->path_velocity * dt;
+  pose.Pos().X() += pos.X() * this->path_velocity * dt;
+  pose.Pos().Y() += pos.Y() * this->path_velocity * dt;
+
+  /////////////////////////////////////////////////////////////////////////////////////////
+
+  // After IF-ELSE: Standard post processing 
+  
+  // Distance traveled is used to coordinate motion with the walking animation
   double distanceTraveled = (pose.Pos() - this->actor->WorldPose().Pos()).Length();
 
   this->actor->SetWorldPose(pose, false, false);
   this->actor->SetScriptTime(this->actor->ScriptTime() + (distanceTraveled * this->animation_factor_));
   this->last_update = _info.simTime;
+}
+
+void GazeboRosRobotFollowActor::ChooseNewTarget()
+{
+  // Added by brucechanjianle
+  // Increase index number in sequence
+  
+  // #ifdef DEBUG_
+  //   // For debug
+  //   gzdbg << "index:" << this->idx << "\t" << "target_size:" << this->targets.size() << (this->idx < this->targets.size()) << std::endl;
+  // #endif
+  this->idx++;
+  // if(!(this->idx < this->targets.size()))
+  // {
+  //   #ifdef DEBUG_
+  //     // For debug
+  //     gzdbg << "Zero statement!" << std::endl;
+  //   #endif
+  //   this->idx = 0;
+  // }
+  
+  // #ifdef DEBUG_
+  //   // For debug
+  //   gzdbg << "current index:" << this->idx << std::endl;
+  // #endif
+
+  // Set next target
+  this->target_pose = this->target_poses.at(this->idx);  
 }
 
 void GazeboRosRobotFollowActor::VelQueueThread()
@@ -130,4 +275,12 @@ void GazeboRosRobotFollowActor::VelQueueThread()
 
   while (this->ros_node_->ok())
     this->vel_queue_.callAvailable(ros::WallDuration(timeout));
+}
+
+void GazeboRosRobotFollowActor::PathQueueThread()
+{
+  static const double timeout = 0.01;
+
+  while (this->ros_node_->ok())
+    this->path_queue_.callAvailable(ros::WallDuration(timeout));
 }

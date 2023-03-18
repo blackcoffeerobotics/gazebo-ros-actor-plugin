@@ -7,6 +7,7 @@
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Path.h>
 
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/physics/physics.hh"
@@ -32,25 +33,32 @@ class GazeboRosRobotFollowActor : public ModelPlugin
 
   private: void VelCallback(const geometry_msgs::Twist::ConstPtr &msg);
 
+  private: void PathCallback(const nav_msgs::Path::ConstPtr &msg);
+
   /// \brief Function that is called every update cycle.
   /// \param[in] _info Timing information
   private: void OnUpdate(const common::UpdateInfo &_info);
 
   private: void VelQueueThread();
+  private: void PathQueueThread();
 
   private: ros::NodeHandle *ros_node_;
 
   private: ros::Subscriber vel_sub_;
+  private: ros::Subscriber path_sub_;
 
-  /// \brief Custom Callback Queue for guide vel
+  /// \brief Custom Callback Queue for guide vel and path
   private: ros::CallbackQueue vel_queue_;
+  private: ros::CallbackQueue path_queue_;
 
   /// \brief Custom Callback Queue thread
 
   private: boost::thread velCallbackQueueThread_;
+  private: boost::thread pathCallbackQueueThread_;
 
   private: std::string vel_topic_;
-
+  private: std::string path_topic_;
+  
   /// \brief Pointer to the parent actor.
   private: physics::ActorPtr actor;
 
@@ -79,6 +87,22 @@ class GazeboRosRobotFollowActor : public ModelPlugin
 
   /// \brief Velocity of the robot guide
   private: ignition::math::Pose3d guide_vel_;
+
+/// \brief Velocity of the actor
+  private: double path_velocity;
+
+  /// \brief Current target location
+  private: ignition::math::Vector3d target_pose;
+
+  /// \brief Target pose vector
+  private: std::vector<ignition::math::Vector3d> target_poses;
+  private: int idx;
+  
+  /// \brief Target pose Tolerance
+  private: double tolerance;
+
+  /// \brief Helper function to choose a new target pose
+  private: void ChooseNewTarget();
 
   /// \brief Data structure for saving robot command.
   private: std::queue<ignition::math::Vector3d> cmd_queue_;
