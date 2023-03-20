@@ -16,11 +16,14 @@
 namespace gazebo
 {
 
+/// \brief Gazebo plugin for commanding an actor to follow a path or velocity published by other ROS node.
+
 class GazeboRosRobotFollowActor : public ModelPlugin
 {
   /// \brief Constructor
   public: GazeboRosRobotFollowActor();
 
+  /// \brief Destructor
   public: ~GazeboRosRobotFollowActor();
 
   /// \brief Load the actor plugin.
@@ -28,46 +31,56 @@ class GazeboRosRobotFollowActor : public ModelPlugin
   /// \param[in] _sdf Pointer to the plugin's SDF elements.
   public: virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
 
-    // Documentation Inherited.
+  // \brief Reset the plugin.
   public: virtual void Reset();
 
+  /// \brief Callback function for receiving velocity commands from a publisher.
+  /// \param[in] _model Pointer to the incoming velocity message.
   private: void VelCallback(const geometry_msgs::Twist::ConstPtr &msg);
 
+  /// \brief Callback function for receiving path commands from a publisher.
+  /// \param[in] _model Pointer to the incoming path message.
   private: void PathCallback(const nav_msgs::Path::ConstPtr &msg);
 
   /// \brief Function that is called every update cycle.
-  /// \param[in] _info Timing information
+  /// \param[in] _info Timing information.
   private: void OnUpdate(const common::UpdateInfo &_info);
 
+  /// \brief Custom callback queue thread for velocity commands.
   private: void VelQueueThread();
+
+  /// \brief Custom callback queue thread for path commands.
   private: void PathQueueThread();
 
+  /// \brief ROS node handle.
   private: ros::NodeHandle *ros_node_;
 
+  /// \brief Subscribers for velocity and path commands.
   private: ros::Subscriber vel_sub_;
   private: ros::Subscriber path_sub_;
 
-  /// \brief Custom Callback Queue for guide vel and path
+  /// \brief Custom callback queues for velocity and path commands.
   private: ros::CallbackQueue vel_queue_;
   private: ros::CallbackQueue path_queue_;
 
-  /// \brief Custom Callback Queue thread
-
+  /// \brief Custom callback queue threads for velocity and path commands.
   private: boost::thread velCallbackQueueThread_;
   private: boost::thread pathCallbackQueueThread_;
 
+  /// \brief Topic names for velocity and path commands.
   private: std::string vel_topic_;
   private: std::string path_topic_;
   
   /// \brief Pointer to the parent actor.
   private: physics::ActorPtr actor;
 
-  /// \brief Pointer to the world, for convenience.
+  /// \brief Pointer to the world
   private: physics::WorldPtr world;
 
   /// \brief Pointer to the sdf element.
   private: sdf::ElementPtr sdf;
 
+  /// \brief Animation factor for actor movement
   private: double animation_factor_;
 
   /// \brief List of connections
@@ -85,24 +98,29 @@ class GazeboRosRobotFollowActor : public ModelPlugin
   /// \brief Variable for control the non-constant velocity.
   private: double oscillation_factor_;
 
-  /// \brief Velocity of the robot guide
+  /// \brief Flag to determine if the plugin will follow a path or velocity subscriber
+  private: std::string follow_;
+
+  /// \brief Velocity of the robot guide // TODO: Discontinue the usage of guide terms
   private: ignition::math::Pose3d guide_vel_;
 
-  /// \brief Velocity of the actor
-  private: double lin_velocity;
+  /// \brief Linear velocity of the actor when it follows a path
+  private: double lin_velocity_;
 
-  /// \brief factor to multiply with yaw to dicretise it
-  private: double spin_factor;
+  /// \brief Factor to discretize the actor's yaw
+  private: double spin_factor_;
 
-  /// \brief Current target location
+  /// \brief Current target pose
   private: ignition::math::Vector3d target_pose;
 
-  /// \brief Target pose vector
+  /// \brief List of target poses
   private: std::vector<ignition::math::Vector3d> target_poses;
+
+  /// \brief Index of current target pose
   private: int idx;
   
   /// \brief Target pose Tolerance
-  private: double tolerance;
+  private: double tolerance_;
 
   /// \brief Helper function to choose a new target pose
   private: void ChooseNewTarget();
@@ -110,6 +128,7 @@ class GazeboRosRobotFollowActor : public ModelPlugin
   /// \brief Data structure for saving robot command.
   private: std::queue<ignition::math::Vector3d> cmd_queue_;
 
+  /// \brief Flag for first run
   private: bool first_run_;
 
 };
