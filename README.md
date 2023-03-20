@@ -30,22 +30,16 @@ To use the gazebo_ros_actor_plugin, follow these steps:
 3. Edit the parameters in the `velocity_follow.world` file and choose the method of subscription using the "follow" tag corresponding to the plugin of the actor "actor1". It could be either subscribing to path or velocity commands. 
 4. Launch the `sim.launch` file by running:
 
-        ```
         roslaunch gazebo_ros_actor_plugin sim.launch
-        ```
 5. Start the desired publisher. This package has two example publishers set up to try the plugin:
 
     a. Velocity publisher: To run this publisher, enter the following command. Then give keyboard inputs to command linear and angular velocities. This publisher is based on the `ros-noetic-teleop-twist-keyboard` package.
 
-        ```
         rosrun teleop_twist_keyboard teleop_twist_keyboard.py
-        ```
 
     b. Path publisher: To run this publisher, enter the following command. Note that the workspace needs to be sourced before this command is run. This file can be found in the `/scripts` directory in the package.
 
-        ```
         rosrun gazebo_ros_actor_plugin path_publisher.py
-        ```
 
 ## ROS API
 
