@@ -88,8 +88,11 @@ class GazeboRosRobotFollowActor : public ModelPlugin
   /// \brief Velocity of the robot guide
   private: ignition::math::Pose3d guide_vel_;
 
-/// \brief Velocity of the actor
-  private: double path_velocity;
+  /// \brief Velocity of the actor
+  private: double lin_velocity;
+
+  /// \brief factor to multiply with yaw to dicretise it
+  private: double spin_factor;
 
   /// \brief Current target location
   private: ignition::math::Vector3d target_pose;

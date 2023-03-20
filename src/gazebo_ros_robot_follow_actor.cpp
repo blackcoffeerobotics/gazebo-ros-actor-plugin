@@ -106,7 +106,8 @@ void GazeboRosRobotFollowActor::Reset()
 {
 
   this->last_update = 0;
-  this->path_velocity = 1;
+  this->lin_velocity = 1;
+  this->spin_factor = 0.01;
   
   gzdbg << "Improve the initialization of target poses vector to current pose. Format: [x,y,yaw]"<< std::endl;
   this->target_poses.push_back(ignition::math::Vector3d(2.0, 0.0, 0.0));
@@ -154,7 +155,7 @@ void GazeboRosRobotFollowActor::PathCallback(const nav_msgs::Path::ConstPtr &msg
   // Extract the poses from the Path message
   const std::vector<geometry_msgs::PoseStamped>& poses = msg->poses;
 
-  gzdbg << "PathCallback function!" << std::endl;
+  // gzdbg << "PathCallback function!" << std::endl;
 
   // Extract the x, y, and yaw from each pose and store it as a target
   for (size_t i = 0; i < poses.size(); ++i)
@@ -208,7 +209,7 @@ void GazeboRosRobotFollowActor::OnUpdate(const common::UpdateInfo &_info)
   // Choose a new target position if the actor has reached its current target.
   if (distance < this->tolerance)
   {
-    // Otherwise change target
+    // If there are more targets, change target
     if (this->idx < this->target_poses.size() - 1){
     this->ChooseNewTarget();
     gzdbg << "Pursuing next target!" << std::endl; 
@@ -223,11 +224,30 @@ void GazeboRosRobotFollowActor::OnUpdate(const common::UpdateInfo &_info)
     }
   }
 
-  // // Normalize the direction vector
-  // pos = pos.Normalize();
-  // pose.Pos() += pos * this->path_velocity * dt;
-  pose.Pos().X() += pos.X() * this->path_velocity * dt;
-  pose.Pos().Y() += pos.Y() * this->path_velocity * dt;
+  // Normalize the direction vector
+  // pos = pos.Normalize(); // Doesn't work
+  if (pos.Length() != 0){
+    pos = pos/pos.Length();  
+  }
+
+  // Compute the yaw orientation
+  ignition::math::Angle yaw = atan2(pos.Y(), pos.X()) + 1.5707 - rpy.Z();
+  yaw.Normalize();
+
+  // Rotate in place, instead of jumping [If yaw>10 deg]
+  if (std::abs(yaw.Radian()) > IGN_DTOR(10))
+  {
+    pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+
+        yaw.Radian()*this->spin_factor);
+  }
+  else
+  {
+    // pose.Pos() += pos * this->lin_velocity * dt;
+    pose.Pos().X() += pos.X() * this->lin_velocity * dt;
+    pose.Pos().Y() += pos.Y() * this->lin_velocity * dt;
+
+    pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+yaw.Radian());
+  }
 
   /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -243,27 +263,7 @@ void GazeboRosRobotFollowActor::OnUpdate(const common::UpdateInfo &_info)
 
 void GazeboRosRobotFollowActor::ChooseNewTarget()
 {
-  // Added by brucechanjianle
-  // Increase index number in sequence
-  
-  // #ifdef DEBUG_
-  //   // For debug
-  //   gzdbg << "index:" << this->idx << "\t" << "target_size:" << this->targets.size() << (this->idx < this->targets.size()) << std::endl;
-  // #endif
   this->idx++;
-  // if(!(this->idx < this->targets.size()))
-  // {
-  //   #ifdef DEBUG_
-  //     // For debug
-  //     gzdbg << "Zero statement!" << std::endl;
-  //   #endif
-  //   this->idx = 0;
-  // }
-  
-  // #ifdef DEBUG_
-  //   // For debug
-  //   gzdbg << "current index:" << this->idx << std::endl;
-  // #endif
 
   // Set next target
   this->target_pose = this->target_poses.at(this->idx);  
