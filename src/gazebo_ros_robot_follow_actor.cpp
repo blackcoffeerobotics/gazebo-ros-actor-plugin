@@ -38,7 +38,7 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
 {
 
   // Set default values for parameters
-  this->follow_ = "velocity";
+  this->follow_mode_ = "velocity";
   this->vel_topic_ = "/cmd_vel";
   this->path_topic_ = "/cmd_path";
   this->tolerance_ = 0.1;
@@ -47,9 +47,9 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
   this->animation_factor_ = 4.0;
 
   // Override default parameter values with values from SDF
-  if (_sdf->HasElement("follow"))
+  if (_sdf->HasElement("follow_mode"))
   {
-    this->follow_ = _sdf->Get<std::string>("follow");
+    this->follow_mode_ = _sdf->Get<std::string>("follow_mode");
   }
   if (_sdf->HasElement("vel_topic"))
   {
@@ -191,7 +191,7 @@ void GazeboRosRobotFollowActor::OnUpdate(const common::UpdateInfo &_info)
   
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
-  if (this->follow_ == "path"){
+  if (this->follow_mode_ == "path"){
 
     ignition::math::Vector2d target_pos_2d(this->target_pose.X(), this->target_pose.Y());
     ignition::math::Vector2d current_pos_2d(pose.Pos().X(), pose.Pos().Y());
@@ -242,7 +242,7 @@ void GazeboRosRobotFollowActor::OnUpdate(const common::UpdateInfo &_info)
 
   }
 
-  else if (this->follow_ == "velocity"){
+  else if (this->follow_mode_ == "velocity"){
 
     if (!this->cmd_queue_.empty())
     {
