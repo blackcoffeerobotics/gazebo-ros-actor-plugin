@@ -1,4 +1,4 @@
-#include <gazebo_ros_actor_plugin/gazebo_ros_robot_follow_actor.h>
+#include <gazebo_ros_actor_plugin/command_actor.h>
 
 #include <functional>
 #include <cmath>
@@ -9,16 +9,16 @@
 #include "gazebo/physics/physics.hh"
 
 using namespace gazebo;
-GZ_REGISTER_MODEL_PLUGIN(GazeboRosRobotFollowActor)
+GZ_REGISTER_MODEL_PLUGIN(CommandActor)
 
 #define WALKING_ANIMATION "walking"
 
 /////////////////////////////////////////////////
-GazeboRosRobotFollowActor::GazeboRosRobotFollowActor()
+CommandActor::CommandActor()
 {
 }
 
-GazeboRosRobotFollowActor::~GazeboRosRobotFollowActor()
+CommandActor::~CommandActor()
 {
   this->vel_queue_.clear();
   this->vel_queue_.disable();
@@ -34,7 +34,7 @@ GazeboRosRobotFollowActor::~GazeboRosRobotFollowActor()
 }
 
 /////////////////////////////////////////////////
-void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
+void CommandActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
 
   // Set default values for parameters
@@ -97,31 +97,31 @@ void GazeboRosRobotFollowActor::Load(physics::ModelPtr _model, sdf::ElementPtr _
 
   // Subscribe to the velocity commands
   ros::SubscribeOptions vel_so = ros::SubscribeOptions::create<geometry_msgs::Twist>(vel_topic_, 1000,
-                                                                                     boost::bind(&GazeboRosRobotFollowActor::VelCallback, this, _1),
+                                                                                     boost::bind(&CommandActor::VelCallback, this, _1),
                                                                                      ros::VoidPtr(), &vel_queue_);
   this->vel_sub_ = ros_node_->subscribe(vel_so);
 
   // Create a thread for the velocity callback queue
   this->velCallbackQueueThread_ =
-      boost::thread(boost::bind(&GazeboRosRobotFollowActor::VelQueueThread, this));
+      boost::thread(boost::bind(&CommandActor::VelQueueThread, this));
 
   // Subscribe to the path commands
   ros::SubscribeOptions path_so = ros::SubscribeOptions::create<nav_msgs::Path>(path_topic_, 1000,
-                                                                                     boost::bind(&GazeboRosRobotFollowActor::PathCallback, this, _1),
+                                                                                     boost::bind(&CommandActor::PathCallback, this, _1),
                                                                                      ros::VoidPtr(), &path_queue_);
   this->path_sub_ = ros_node_->subscribe(path_so);
 
   // Create a thread for the path callback queue
   this->pathCallbackQueueThread_ =
-      boost::thread(boost::bind(&GazeboRosRobotFollowActor::PathQueueThread, this));
+      boost::thread(boost::bind(&CommandActor::PathQueueThread, this));
 
   // Connect the OnUpdate function to the WorldUpdateBegin event.
   this->connections.push_back(event::Events::ConnectWorldUpdateBegin(
-      std::bind(&GazeboRosRobotFollowActor::OnUpdate, this, std::placeholders::_1)));
+      std::bind(&CommandActor::OnUpdate, this, std::placeholders::_1)));
 }
 
 /////////////////////////////////////////////////
-void GazeboRosRobotFollowActor::Reset()
+void CommandActor::Reset()
 {
 
   // Reset last update time and target pose index
@@ -152,7 +152,7 @@ void GazeboRosRobotFollowActor::Reset()
   }
 }
 
-void GazeboRosRobotFollowActor::VelCallback(const geometry_msgs::Twist::ConstPtr &msg)
+void CommandActor::VelCallback(const geometry_msgs::Twist::ConstPtr &msg)
 {
   ignition::math::Vector3d vel_cmd;
   vel_cmd.X() = msg->linear.x;
@@ -160,7 +160,7 @@ void GazeboRosRobotFollowActor::VelCallback(const geometry_msgs::Twist::ConstPtr
   this->cmd_queue_.push(vel_cmd);
 }
 
-void GazeboRosRobotFollowActor::PathCallback(const nav_msgs::Path::ConstPtr &msg)
+void CommandActor::PathCallback(const nav_msgs::Path::ConstPtr &msg)
 {
   // Extract the poses from the Path message
   const std::vector<geometry_msgs::PoseStamped>& poses = msg->poses;
@@ -182,7 +182,7 @@ void GazeboRosRobotFollowActor::PathCallback(const nav_msgs::Path::ConstPtr &msg
 }
 
 /////////////////////////////////////////////////
-void GazeboRosRobotFollowActor::OnUpdate(const common::UpdateInfo &_info)
+void CommandActor::OnUpdate(const common::UpdateInfo &_info)
 {
   // Time delta
   double dt = (_info.simTime - this->last_update).Double();
@@ -266,7 +266,7 @@ void GazeboRosRobotFollowActor::OnUpdate(const common::UpdateInfo &_info)
   this->last_update = _info.simTime;
 }
 
-void GazeboRosRobotFollowActor::ChooseNewTarget()
+void CommandActor::ChooseNewTarget()
 {
   this->idx++;
 
@@ -274,7 +274,7 @@ void GazeboRosRobotFollowActor::ChooseNewTarget()
   this->target_pose = this->target_poses.at(this->idx);  
 }
 
-void GazeboRosRobotFollowActor::VelQueueThread()
+void CommandActor::VelQueueThread()
 {
   static const double timeout = 0.01;
 
@@ -282,7 +282,7 @@ void GazeboRosRobotFollowActor::VelQueueThread()
     this->vel_queue_.callAvailable(ros::WallDuration(timeout));
 }
 
-void GazeboRosRobotFollowActor::PathQueueThread()
+void CommandActor::PathQueueThread()
 {
   static const double timeout = 0.01;
 
