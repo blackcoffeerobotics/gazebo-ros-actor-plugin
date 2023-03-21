@@ -230,6 +230,8 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
     {
       pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+
           yaw.Radian()*this->spin_factor_);
+      // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+
+      //     yaw.Radian()*this->spin_factor_);    // NewSkin
     }
     else
     {
@@ -238,6 +240,7 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
       pose.Pos().Y() += pos.Y() * this->lin_velocity_ * dt;
 
       pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+yaw.Radian());
+      // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+yaw.Radian());  // NewSkin
     }
 
   }
@@ -255,6 +258,7 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
     pose.Pos().Y() -= this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
 
     pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt);
+    // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt); // NewSkin
 
   }
   
