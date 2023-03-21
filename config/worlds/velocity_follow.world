@@ -26,8 +26,8 @@
     <interpolate_x>true</interpolate_x>
   </animation>
   <plugin name="actor_plugin" filename="libgazebo_ros_robot_follow_actor.so">
-    <!-- <follow>path</follow> -->
-    <plugin>velocity</plugin>
+    <!-- <follow_mode>path</follow_mode> -->
+    <follow_mode>velocity</follow_mode>
     <vel_topic>/cmd_vel</vel_topic>
     <path_topic>/cmd_path</path_topic>
     <animation_factor>4.0</animation_factor>

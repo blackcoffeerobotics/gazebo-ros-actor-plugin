@@ -99,7 +99,7 @@ class GazeboRosRobotFollowActor : public ModelPlugin
   private: double oscillation_factor_;
 
   /// \brief Flag to determine if the plugin will follow a path or velocity subscriber
-  private: std::string follow_;
+  private: std::string follow_mode_;
 
   /// \brief Velocity of the robot guide // TODO: Discontinue the usage of guide terms
   private: ignition::math::Pose3d guide_vel_;
