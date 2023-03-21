@@ -1,5 +1,5 @@
-#ifndef GAZEBO_ROS_ROBOT_FOLLOW_ACTOR_H
-#define GAZEBO_ROS_ROBOT_FOLLOW_ACTOR_H
+#ifndef COMMAND_ACTOR_H
+#define COMMAND_ACTOR_H
 
 #include <string>
 #include <queue>
@@ -18,13 +18,13 @@ namespace gazebo
 
 /// \brief Gazebo plugin for commanding an actor to follow a path or velocity published by other ROS node.
 
-class GazeboRosRobotFollowActor : public ModelPlugin
+class CommandActor : public ModelPlugin
 {
   /// \brief Constructor
-  public: GazeboRosRobotFollowActor();
+  public: CommandActor();
 
   /// \brief Destructor
-  public: ~GazeboRosRobotFollowActor();
+  public: ~CommandActor();
 
   /// \brief Load the actor plugin.
   /// \param[in] _model Pointer to the parent model.
@@ -134,4 +134,4 @@ class GazeboRosRobotFollowActor : public ModelPlugin
 };
 }
 
-#endif // GAZEBO_ROS_ROBOT_FOLLOW_ACTOR_H
+#endif // COMMAND_ACTOR_H
