@@ -29,7 +29,7 @@ To use the gazebo_ros_actor_plugin, follow these steps:
 
 1. Build the package using `catkin_make`.
 2. Source `setup.bash` for the workspace containing this package.
-3. Edit the parameters in the `velocity_follow.world` file and choose the method of subscription using the "follow_mode" tag corresponding to the plugin of the actor "actor1". It could be either subscribing to path or velocity commands. 
+3. Edit the parameters in the `move_actor.world` file and choose the method of subscription using the `follow_mode` tag corresponding to the plugin of the actor `actor1`. It could be either subscribing to path or velocity commands. 
 4. Launch the `sim.launch` file by running:
 
         roslaunch gazebo_ros_actor_plugin sim.launch
@@ -54,9 +54,9 @@ To run this publisher, enter the following command after sourcing the workspace:
 
 Note that the `path_publisher.py` file can be found in the `/scripts` directory in the package.
 
-## Parameters in `velocity_follow.world`
+## Parameters in `move_actor.world`
 
-The `velocity_follow.world` file contains the following parameters:
+The `move_actor.world` file contains the following parameters:
 
 - `follow_mode`: The mode in which the actor will follow the commands. It can be set to either path or velocity.
 - `vel_topic`: The name of the topic to which velocity commands will be published. The default topic name is `/cmd_vel`.
@@ -73,4 +73,4 @@ The `gazebo_ros_actor_plugin` subscribes to information from the following inbou
 - `/cmd_vel`: to receive linear and angular velocity commands
 - `/cmd_path`: to receive path commands
 
-Note that the names of the topics can be overridden using `follow_mode` parameter in the `velocity_follow.world` file present in this package's `/config` directory.
+Note that the names of the topics can be overridden using `follow_mode` parameter in the `move_actor.world` file present in this package's `/config` directory.

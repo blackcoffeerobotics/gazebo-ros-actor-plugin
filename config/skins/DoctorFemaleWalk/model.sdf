@@ -1,0 +1,14 @@
+<sdf version="1.6">
+    <actor name="actor">
+      <skin>
+        <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+      <pose>0 0 0 0 0 0</pose>
+      <animation name="walk">
+        <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename>
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+    </actor>
+</sdf>
