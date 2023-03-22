@@ -110,9 +110,6 @@ class CommandActor : public ModelPlugin
   /// \brief Speed at which actor rotates to achieve desired orientation during rotational alignment
   private: double ang_velocity_;
 
-  /// \brief Factor to discretize the actor's yaw
-  private: double spin_factor_;
-
   /// \brief Current target pose
   private: ignition::math::Vector3d target_pose;
 

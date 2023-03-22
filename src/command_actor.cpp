@@ -47,7 +47,6 @@ void CommandActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->lin_velocity_ = 1;
   this->ang_tolerance_ = IGN_DTOR(5); 
   this->ang_velocity_ = IGN_DTOR(10); 
-  this->spin_factor_ = 0.01; // TODO: Remove from .cpp and .h
   this->animation_factor_ = 4.0; 
 
   // Override default parameter values with values from SDF
@@ -199,6 +198,8 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
   
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
+  // gzdbg << "Current yaw of actor: " << rpy.Z() << std::endl;
+
   if (this->follow_mode_ == "path"){
 
     ignition::math::Vector2d target_pos_2d(this->target_pose.X(), this->target_pose.Y());
@@ -206,18 +207,18 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
     ignition::math::Vector2d pos = target_pos_2d - current_pos_2d;
     double distance = pos.Length();
 
-    // Choose a new target position if the actor has reached its current target.
+    // Check if actor has reached current target position
     if (distance < this->lin_tolerance_)
     {
-      // If there are more targets, change target
+      // If there are more targets, choose new target
       if (this->idx < this->target_poses.size() - 1){
       this->ChooseNewTarget();
       gzdbg << "Pursuing next target!" << std::endl; 
       pos.X() = this->target_pose.X() - pose.Pos().X();
       pos.Y() = this->target_pose.Y() - pose.Pos().Y();    
       }
-      // If all targets have been accomplished, move no further
       else{
+        // All targets have been accomplished, stop moving
         gzdbg << "Last target reached!" << std::endl; 
         pos.X() = 0;
         pos.Y() = 0;
@@ -229,27 +230,42 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
       pos = pos/pos.Length();  
     }
 
-    // Compute the yaw orientation
+    // Calculate the angular displacement required based on the direction vector towards the current target position
     ignition::math::Angle yaw = atan2(pos.Y(), pos.X()) + M_PI_2 - rpy.Z();
     yaw.Normalize();
 
+    // DEBUGGING MESSAGES TO UNDERSTAND ANGLES: 
+    // gzdbg << "Current yaw of actor: " << rpy.Z() << std::endl;
+    // gzdbg << "Value of tan inverse: " << atan2(pos.Y(), pos.X()) << std::endl;
+    // gzdbg << "Value of yaw variable: " << yaw << std::endl;
 
-    // Rotate in place, instead of jumping [If yaw>10 deg]
-    if (std::abs(yaw.Radian()) > IGN_DTOR(10))
+
+    // Check if required angular displacement is greater than tolerance
+    if (std::abs(yaw.Radian()) > this->ang_tolerance_)
     {
-      pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+
-          yaw.Radian()*this->spin_factor_);
-      // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+
-      //     yaw.Radian()*this->spin_factor_);    // NewSkin
+      // If the required angular displacement is greater than 10 degrees, rotate in place
+      if (std::abs(yaw.Radian()) > IGN_DTOR(10))
+      {
+        pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+
+            this->ang_velocity_ * dt);
+        // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+
+        //     this->ang_velocity_ * dt);    // NewSkin
+      }
+      else
+      {
+        // Move towards the target position
+        pose.Pos().X() += pos.X() * this->lin_velocity_ * dt;
+        pose.Pos().Y() += pos.Y() * this->lin_velocity_ * dt;
+
+        pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+yaw.Radian());
+        // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+yaw.Radian());  // NewSkin
+      }
     }
-    else
+    else 
     {
-      // pose.Pos() += pos * this->lin_velocity_ * dt;
+      // Move towards the target position
       pose.Pos().X() += pos.X() * this->lin_velocity_ * dt;
-      pose.Pos().Y() += pos.Y() * this->lin_velocity_ * dt;
-
-      pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+yaw.Radian());
-      // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+yaw.Radian());  // NewSkin
+      pose.Pos().Y() += pos.Y() * this->lin_velocity_ * dt;  
     }
 
   }
