@@ -11,6 +11,7 @@
 using namespace gazebo;
 GZ_REGISTER_MODEL_PLUGIN(CommandActor)
 
+#define _USE_MATH_DEFINES
 #define WALKING_ANIMATION "walking"
 
 /////////////////////////////////////////////////
@@ -36,6 +37,7 @@ CommandActor::~CommandActor()
 /////////////////////////////////////////////////
 void CommandActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 {
+  // gzdbg << "Value of Radian for 5 deg: " << IGN_DTOR(5) << std::endl; 
 
   // Set default values for parameters
   this->follow_mode_ = "velocity";
@@ -43,8 +45,10 @@ void CommandActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->path_topic_ = "/cmd_path";
   this->lin_tolerance_ = 0.1;
   this->lin_velocity_ = 1;
-  this->spin_factor_ = 0.01;
-  this->animation_factor_ = 4.0;
+  this->ang_tolerance_ = IGN_DTOR(5); 
+  this->ang_velocity_ = IGN_DTOR(10); 
+  this->spin_factor_ = 0.01; // TODO: Remove from .cpp and .h
+  this->animation_factor_ = 4.0; 
 
   // Override default parameter values with values from SDF
   if (_sdf->HasElement("follow_mode"))
@@ -59,18 +63,22 @@ void CommandActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   {
     this->path_topic_ = _sdf->Get<std::string>("path_topic");
   }
-  if (_sdf->HasElement("tolerance"))
+  if (_sdf->HasElement("linear_tolerance"))
   {
-    this->lin_tolerance_ = _sdf->Get<double>("tolerance");
+    this->lin_tolerance_ = _sdf->Get<double>("linear_tolerance");
   }
   if (_sdf->HasElement("linear_velocity"))
   {
     this->lin_velocity_ = _sdf->Get<double>("linear_velocity");
   }
-  if (_sdf->HasElement("spin_factor"))
+  if (_sdf->HasElement("angular_tolerance"))
   {
-    this->spin_factor_ = _sdf->Get<double>("spin_factor");
+    this->ang_tolerance_ = _sdf->Get<double>("angular_tolerance");
   }
+  if (_sdf->HasElement("angular_velocity"))
+  {
+    this->ang_velocity_ = _sdf->Get<double>("angular_velocity");
+  }  
   if (_sdf->HasElement("animation_factor"))
   {
     this->animation_factor_ = _sdf->Get<double>("animation_factor");
@@ -222,13 +230,14 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
     }
 
     // Compute the yaw orientation
-    ignition::math::Angle yaw = atan2(pos.Y(), pos.X()) + 1.5707 - rpy.Z();
+    ignition::math::Angle yaw = atan2(pos.Y(), pos.X()) + M_PI_2 - rpy.Z();
     yaw.Normalize();
+
 
     // Rotate in place, instead of jumping [If yaw>10 deg]
     if (std::abs(yaw.Radian()) > IGN_DTOR(10))
     {
-      pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+
+      pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+
           yaw.Radian()*this->spin_factor_);
       // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+
       //     yaw.Radian()*this->spin_factor_);    // NewSkin
@@ -239,7 +248,7 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
       pose.Pos().X() += pos.X() * this->lin_velocity_ * dt;
       pose.Pos().Y() += pos.Y() * this->lin_velocity_ * dt;
 
-      pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+yaw.Radian());
+      pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+yaw.Radian());
       // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+yaw.Radian());  // NewSkin
     }
 
@@ -257,7 +266,7 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
     pose.Pos().X() += this->guide_vel_.Pos().X()*sin(pose.Rot().Euler().Z())*dt;
     pose.Pos().Y() -= this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
 
-    pose.Rot() = ignition::math::Quaterniond(1.5707, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt);
+    pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt);
     // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt); // NewSkin
 
   }

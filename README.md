@@ -61,10 +61,11 @@ The `move_actor.world` file contains the following parameters:
 - `follow_mode`: The mode in which the actor will follow the commands. It can be set to either path or velocity.
 - `vel_topic`: The name of the topic to which velocity commands will be published. The default topic name is `/cmd_vel`.
 - `path_topic`: The name of the topic to which path commands will be published. The default topic name is `/cmd_path`.
-- `animation_factor`: The factor by which the actor's animation speed will be multiplied.
-- `tolerance`: The tolerance level for the target pose.
-- `linear_velocity`: The linear velocity of the actor when it follows a path.
-- `spin_factor`: The factor by which the actor's yaw will be discretized.
+- `animation_factor`: Multiplier to base animation speed that adjusts the speed of both the actor's animation and foot swinging.
+- `linear_tolerance`: Maximum allowed distance between actor and target pose during path-following.
+- `linear_velocity`: Speed at which actor moves along path during path-following.
+- `angular_tolerance`: Maximum allowable difference in orientation between actor's current and desired orientation during rotational alignment.
+- `angular_velocity`: Speed at which actor rotates to achieve desired orientation during rotational alignment.
 
 ## ROS API
 

@@ -80,7 +80,7 @@ class CommandActor : public ModelPlugin
   /// \brief Pointer to the sdf element.
   private: sdf::ElementPtr sdf;
 
-  /// \brief Animation factor for actor movement
+  /// \brief Multiplier to base animation speed to adjust the speed of actor's animation and foot swinging.
   private: double animation_factor_;
 
   /// \brief List of connections
@@ -104,8 +104,10 @@ class CommandActor : public ModelPlugin
   /// \brief Velocity of the robot guide // TODO: Discontinue the usage of guide terms
   private: ignition::math::Pose3d guide_vel_;
 
-  /// \brief Linear and angular velocities of the actor when it follows a path
+  /// \brief Speed at which actor moves along path during path-following
   private: double lin_velocity_;
+
+  /// \brief Speed at which actor rotates to achieve desired orientation during rotational alignment
   private: double ang_velocity_;
 
   /// \brief Factor to discretize the actor's yaw
@@ -120,10 +122,10 @@ class CommandActor : public ModelPlugin
   /// \brief Index of current target pose
   private: int idx;
   
-  /// \brief Target pose Tolerance
+  /// \brief Maximum allowed distance between actor and target pose during path-following
   private: double lin_tolerance_;
 
-  /// \brief Angular alignment Tolerance
+  /// \brief Maximum allowable difference in orientation between actor's current and desired orientation during rotational alignment
   private: double ang_tolerance_;
 
   /// \brief Helper function to choose a new target pose
