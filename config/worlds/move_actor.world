@@ -26,7 +26,7 @@
     </light>    
 
     <actor name="actor1">
-      <pose>0 0 1.2138 0 0 90</pose>
+      <pose>0 0 1.2138 0 0 0</pose>
       <skin>
         <filename>moonwalk.dae</filename>
         <!-- <filename>../skins/MaleVisitorWalk/meshes/MaleVisitorWalk.dae</filename> -->
@@ -58,10 +58,11 @@
         <vel_topic>/cmd_vel</vel_topic>
         <path_topic>/cmd_path</path_topic>
         <!-- How fast it is swinging its feet -->
-        <animation_factor>1.0</animation_factor>  
-        <tolerance>0.1</tolerance>
+        <animation_factor>4.0</animation_factor>  
+        <linear_tolerance>0.1</linear_tolerance>
         <linear_velocity>1</linear_velocity>
-        <spin_factor>0.01</spin_factor>
+        <angular_tolerance>0.0872</angular_tolerance>
+        <angular_velocity>0.1745</angular_velocity>        
       </plugin>
     </actor>
 
