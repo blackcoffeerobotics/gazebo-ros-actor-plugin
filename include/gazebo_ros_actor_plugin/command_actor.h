@@ -104,8 +104,9 @@ class CommandActor : public ModelPlugin
   /// \brief Velocity of the robot guide // TODO: Discontinue the usage of guide terms
   private: ignition::math::Pose3d guide_vel_;
 
-  /// \brief Linear velocity of the actor when it follows a path
+  /// \brief Linear and angular velocities of the actor when it follows a path
   private: double lin_velocity_;
+  private: double ang_velocity_;
 
   /// \brief Factor to discretize the actor's yaw
   private: double spin_factor_;
@@ -120,7 +121,10 @@ class CommandActor : public ModelPlugin
   private: int idx;
   
   /// \brief Target pose Tolerance
-  private: double tolerance_;
+  private: double lin_tolerance_;
+
+  /// \brief Angular alignment Tolerance
+  private: double ang_tolerance_;
 
   /// \brief Helper function to choose a new target pose
   private: void ChooseNewTarget();

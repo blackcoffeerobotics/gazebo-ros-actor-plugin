@@ -73,4 +73,4 @@ The `gazebo_ros_actor_plugin` subscribes to information from the following inbou
 - `/cmd_vel`: to receive linear and angular velocity commands
 - `/cmd_path`: to receive path commands
 
-Note that the names of the topics can be overridden using `follow_mode` parameter in the `move_actor.world` file present in this package's `/config` directory.
+Note that the names of the topics can be overridden in the `move_actor.world` file present in this package's `/config` directory.
