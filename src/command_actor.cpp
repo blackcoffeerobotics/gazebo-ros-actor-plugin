@@ -41,7 +41,7 @@ void CommandActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->follow_mode_ = "velocity";
   this->vel_topic_ = "/cmd_vel";
   this->path_topic_ = "/cmd_path";
-  this->tolerance_ = 0.1;
+  this->lin_tolerance_ = 0.1;
   this->lin_velocity_ = 1;
   this->spin_factor_ = 0.01;
   this->animation_factor_ = 4.0;
@@ -61,7 +61,7 @@ void CommandActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   }
   if (_sdf->HasElement("tolerance"))
   {
-    this->tolerance_ = _sdf->Get<double>("tolerance");
+    this->lin_tolerance_ = _sdf->Get<double>("tolerance");
   }
   if (_sdf->HasElement("linear_velocity"))
   {
@@ -199,7 +199,7 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
     double distance = pos.Length();
 
     // Choose a new target position if the actor has reached its current target.
-    if (distance < this->tolerance_)
+    if (distance < this->lin_tolerance_)
     {
       // If there are more targets, change target
       if (this->idx < this->target_poses.size() - 1){

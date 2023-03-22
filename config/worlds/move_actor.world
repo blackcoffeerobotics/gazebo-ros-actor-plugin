@@ -14,44 +14,56 @@
       <pose>0 0 0 0 0 0</pose>
     </include>
 
-<actor name="actor1">
-  <pose>0 0 1.2138 0 0 0</pose>
-  <skin>
-    <filename>moonwalk.dae</filename>
-    <!-- <filename>../skins/MaleVisitorWalk/meshes/MaleVisitorWalk.dae</filename> -->
-    <!-- <filename>../skins/DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename> -->
-    <!-- <filename>../skins/FemaleVisitorWalk/meshes/FemaleVisitorWalk.dae</filename> -->
-    <!-- <filename>../skins/NurseFemaleWalk/meshes/NurseFemaleWalk.dae</filename> -->
-    <!-- <filename>../skins/OpScrubsWalk/meshes/OpScrubsWalk.dae</filename> -->
-    <!-- <filename>../skins/PatientRollingWalker/meshes/PatientRollingWalker.dae</filename> -->
-    <!-- <filename>../skins/PatientWalkingCane/meshes/PatientWalkingCane.dae</filename> -->
-    <!-- <filename>../skins/VisitorKidWalk/meshes/VisitorKidWalk.dae</filename> -->
-    <scale>1.0</scale>
-  </skin>
-  <animation name="walking">
-    <filename>walk.dae</filename>
-    <!-- <filename>../skins/MaleVisitorWalk/meshes/MaleVisitorWalk.dae</filename> -->
-    <!-- <filename>../skins/DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename> -->
-    <!-- <filename>../skins/FemaleVisitorWalk/meshes/FemaleVisitorWalk.dae</filename> -->
-    <!-- <filename>../skins/NurseFemaleWalk/meshes/NurseFemaleWalk.dae</filename> -->
-    <!-- <filename>../skins/OpScrubsWalk/meshes/OpScrubsWalk.dae</filename> -->
-    <!-- <filename>../skins/PatientRollingWalker/meshes/PatientRollingWalker.dae</filename> -->
-    <!-- <filename>../skins/PatientWalkingCane/meshes/PatientWalkingCane.dae</filename> -->
-    <!-- <filename>../skins/VisitorKidWalk/meshes/VisitorKidWalk.dae</filename> -->
-    <scale>1.000000</scale>
-    <interpolate_x>true</interpolate_x>
-  </animation>
-  <plugin name="actor_plugin" filename="libcommand_actor.so">
-    <follow_mode>path</follow_mode>
-    <!-- <follow_mode>velocity</follow_mode> -->
-    <vel_topic>/cmd_vel</vel_topic>
-    <path_topic>/cmd_path</path_topic>
-    <animation_factor>4.0</animation_factor>
-    <tolerance>0.1</tolerance>
-    <linear_velocity>1</linear_velocity>
-    <spin_factor>0.01</spin_factor>
-  </plugin>
-</actor>
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.25 0.25 0.25 1</background>
+      <shadows>false</shadows>
+    </scene>
+    <light type="directional" name="some_light">
+      <diffuse>0.7 0.7 0.7 0</diffuse>
+      <specular>1 1 1 0</specular>
+      <direction>-1 -1 -1</direction>
+    </light>    
+
+    <actor name="actor1">
+      <pose>0 0 1.2138 0 0 90</pose>
+      <skin>
+        <filename>moonwalk.dae</filename>
+        <!-- <filename>../skins/MaleVisitorWalk/meshes/MaleVisitorWalk.dae</filename> -->
+        <!-- <filename>../skins/DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename> -->
+        <!-- <filename>../skins/FemaleVisitorWalk/meshes/FemaleVisitorWalk.dae</filename> -->
+        <!-- <filename>../skins/NurseFemaleWalk/meshes/NurseFemaleWalk.dae</filename> -->
+        <!-- <filename>../skins/OpScrubsWalk/meshes/OpScrubsWalk.dae</filename> -->
+        <!-- <filename>../skins/PatientRollingWalker/meshes/PatientRollingWalker.dae</filename> -->
+        <!-- <filename>../skins/PatientWalkingCane/meshes/PatientWalkingCane.dae</filename> -->
+        <!-- <filename>../skins/VisitorKidWalk/meshes/VisitorKidWalk.dae</filename> -->
+        <scale>1.0</scale>
+      </skin>
+      <animation name="walking">
+        <filename>walk.dae</filename>
+        <!-- <filename>../skins/MaleVisitorWalk/meshes/MaleVisitorWalk.dae</filename> -->
+        <!-- <filename>../skins/DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename> -->
+        <!-- <filename>../skins/FemaleVisitorWalk/meshes/FemaleVisitorWalk.dae</filename> -->
+        <!-- <filename>../skins/NurseFemaleWalk/meshes/NurseFemaleWalk.dae</filename> -->
+        <!-- <filename>../skins/OpScrubsWalk/meshes/OpScrubsWalk.dae</filename> -->
+        <!-- <filename>../skins/PatientRollingWalker/meshes/PatientRollingWalker.dae</filename> -->
+        <!-- <filename>../skins/PatientWalkingCane/meshes/PatientWalkingCane.dae</filename> -->
+        <!-- <filename>../skins/VisitorKidWalk/meshes/VisitorKidWalk.dae</filename> -->
+        <scale>1.000000</scale>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <plugin name="actor_plugin" filename="libcommand_actor.so">
+        <follow_mode>path</follow_mode>
+        <!-- <follow_mode>velocity</follow_mode> -->
+        <vel_topic>/cmd_vel</vel_topic>
+        <path_topic>/cmd_path</path_topic>
+        <!-- How fast it is swinging its feet -->
+        <animation_factor>1.0</animation_factor>  
+        <tolerance>0.1</tolerance>
+        <linear_velocity>1</linear_velocity>
+        <spin_factor>0.01</spin_factor>
+      </plugin>
+    </actor>
 
   </world>
 </sdf>
