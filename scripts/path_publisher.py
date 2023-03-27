@@ -7,10 +7,10 @@ import math
 
 def publish_path():
     # Initialize the node
-    rospy.init_node('path_publisher_node', anonymous=True)
+    rospy.init_node('path_publisher_node')
     
     # Create the publisher with topic "/cmd_path" and message type "Path"
-    pub = rospy.Publisher('/cmd_path', Path, queue_size=10)
+    pub = rospy.Publisher('/cmd_path', Path, queue_size=1, latch=True)
     
     # Create the Path message
     path_msg = Path()
@@ -29,8 +29,7 @@ def publish_path():
         pose.pose.position = Point(x=2 * math.cos(angle), y=2 * math.sin(angle), z=0)
 
         # Calculate the tangent vector at the current point
-        # tangent_vector = Point(x=-2 * math.sin(angle), y=2 * math.cos(angle), z=0)
-        
+                
         # Set the orientation of the PoseStamped message to the quaternion that represents the rotation from the positive x-axis to the tangent vector
         quat = Quaternion(*quaternion_from_euler(0, 0, angle+(3.14159/2.0)))
         pose.pose.orientation = quat
@@ -38,8 +37,10 @@ def publish_path():
     
     # Publish the Path message to the "/cmd_path" topic
     rate = rospy.Rate(10)  # Publish at 10 Hz
+    pub.publish(path_msg)
+    print ('published path', path_msg)
     while not rospy.is_shutdown():
-        pub.publish(path_msg)
+        # pub.publish(path_msg)
         rate.sleep()
 
 if __name__ == '__main__':
