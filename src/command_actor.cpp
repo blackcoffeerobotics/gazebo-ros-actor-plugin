@@ -103,9 +103,8 @@ void CommandActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   this->ros_node_ = new ros::NodeHandle();
 
   // Subscribe to the velocity commands
-  ros::SubscribeOptions vel_so = ros::SubscribeOptions::create<geometry_msgs::Twist>(vel_topic_, 1000,
-                                                                                     boost::bind(&CommandActor::VelCallback, this, _1),
-                                                                                     ros::VoidPtr(), &vel_queue_);
+  ros::SubscribeOptions vel_so = ros::SubscribeOptions::create<geometry_msgs::Twist>
+    (vel_topic_, 1, boost::bind(&CommandActor::VelCallback, this, _1), ros::VoidPtr(), &vel_queue_);
   this->vel_sub_ = ros_node_->subscribe(vel_so);
 
   // Create a thread for the velocity callback queue
@@ -113,9 +112,8 @@ void CommandActor::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
       boost::thread(boost::bind(&CommandActor::VelQueueThread, this));
 
   // Subscribe to the path commands
-  ros::SubscribeOptions path_so = ros::SubscribeOptions::create<nav_msgs::Path>(path_topic_, 1000,
-                                                                                     boost::bind(&CommandActor::PathCallback, this, _1),
-                                                                                     ros::VoidPtr(), &path_queue_);
+  ros::SubscribeOptions path_so = ros::SubscribeOptions::create<nav_msgs::Path>
+    (path_topic_, 1, boost::bind(&CommandActor::PathCallback, this, _1),ros::VoidPtr(), &path_queue_);
   this->path_sub_ = ros_node_->subscribe(path_so);
 
   // Create a thread for the path callback queue
@@ -198,8 +196,6 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
   
   ignition::math::Vector3d rpy = pose.Rot().Euler();
 
-  // gzdbg << "Current yaw of actor: " << rpy.Z() << std::endl;
-
   if (this->follow_mode_ == "path"){
 
     ignition::math::Vector2d target_pos_2d(this->target_pose.X(), this->target_pose.Y());
@@ -211,15 +207,13 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
     if (distance < this->lin_tolerance_)
     {
       // If there are more targets, choose new target
-      if (this->idx < this->target_poses.size() - 1){
+      if (this->idx < this->target_poses.size() - 1) {
       this->ChooseNewTarget();
-      gzdbg << "Pursuing next target!" << std::endl; 
       pos.X() = this->target_pose.X() - pose.Pos().X();
       pos.Y() = this->target_pose.Y() - pose.Pos().Y();    
       }
-      else{
+      else {
         // All targets have been accomplished, stop moving
-        gzdbg << "Last target reached!" << std::endl; 
         pos.X() = 0;
         pos.Y() = 0;
       }
@@ -234,12 +228,6 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
     ignition::math::Angle yaw = atan2(pos.Y(), pos.X()) + M_PI_2 - rpy.Z();
     yaw.Normalize();
 
-    // DEBUGGING MESSAGES TO UNDERSTAND ANGLES: 
-    // gzdbg << "Current yaw of actor: " << rpy.Z() << std::endl;
-    // gzdbg << "Value of tan inverse: " << atan2(pos.Y(), pos.X()) << std::endl;
-    // gzdbg << "Value of yaw variable: " << yaw << std::endl;
-
-
     // Check if required angular displacement is greater than tolerance
     if (std::abs(yaw.Radian()) > this->ang_tolerance_)
     {
@@ -248,8 +236,6 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
       {
         pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+
             this->ang_velocity_ * dt);
-        // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+
-        //     this->ang_velocity_ * dt);    // NewSkin
       }
       else
       {
@@ -258,7 +244,6 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
         pose.Pos().Y() += pos.Y() * this->lin_velocity_ * dt;
 
         pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+yaw.Radian());
-        // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+yaw.Radian());  // NewSkin
       }
     }
     else 
@@ -283,7 +268,6 @@ void CommandActor::OnUpdate(const common::UpdateInfo &_info)
     pose.Pos().Y() -= this->guide_vel_.Pos().X()*cos(pose.Rot().Euler().Z())*dt;
 
     pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt);
-    // pose.Rot() = ignition::math::Quaterniond(0, 0, rpy.Z()+this->guide_vel_.Rot().Euler().Z()*dt); // NewSkin
 
   }
   
