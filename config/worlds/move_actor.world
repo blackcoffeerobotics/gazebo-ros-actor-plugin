@@ -29,26 +29,10 @@
       <pose>0 0 1.2138 0 0 0</pose>
       <skin>
         <filename>moonwalk.dae</filename>
-        <!-- <filename>../skins/MaleVisitorWalk/meshes/MaleVisitorWalk.dae</filename> -->
-        <!-- <filename>../skins/DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename> -->
-        <!-- <filename>../skins/FemaleVisitorWalk/meshes/FemaleVisitorWalk.dae</filename> -->
-        <!-- <filename>../skins/NurseFemaleWalk/meshes/NurseFemaleWalk.dae</filename> -->
-        <!-- <filename>../skins/OpScrubsWalk/meshes/OpScrubsWalk.dae</filename> -->
-        <!-- <filename>../skins/PatientRollingWalker/meshes/PatientRollingWalker.dae</filename> -->
-        <!-- <filename>../skins/PatientWalkingCane/meshes/PatientWalkingCane.dae</filename> -->
-        <!-- <filename>../skins/VisitorKidWalk/meshes/VisitorKidWalk.dae</filename> -->
         <scale>1.0</scale>
       </skin>
       <animation name="walking">
         <filename>walk.dae</filename>
-        <!-- <filename>../skins/MaleVisitorWalk/meshes/MaleVisitorWalk.dae</filename> -->
-        <!-- <filename>../skins/DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename> -->
-        <!-- <filename>../skins/FemaleVisitorWalk/meshes/FemaleVisitorWalk.dae</filename> -->
-        <!-- <filename>../skins/NurseFemaleWalk/meshes/NurseFemaleWalk.dae</filename> -->
-        <!-- <filename>../skins/OpScrubsWalk/meshes/OpScrubsWalk.dae</filename> -->
-        <!-- <filename>../skins/PatientRollingWalker/meshes/PatientRollingWalker.dae</filename> -->
-        <!-- <filename>../skins/PatientWalkingCane/meshes/PatientWalkingCane.dae</filename> -->
-        <!-- <filename>../skins/VisitorKidWalk/meshes/VisitorKidWalk.dae</filename> -->
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
@@ -57,7 +41,6 @@
         <!-- <follow_mode>velocity</follow_mode> -->
         <vel_topic>/cmd_vel</vel_topic>
         <path_topic>/cmd_path</path_topic>
-        <!-- How fast it is swinging its feet -->
         <animation_factor>4.0</animation_factor>  
         <linear_tolerance>0.1</linear_tolerance>
         <linear_velocity>1</linear_velocity>
