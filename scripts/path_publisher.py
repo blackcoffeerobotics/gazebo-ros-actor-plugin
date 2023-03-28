@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+import math
 import rospy
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped, Point, Quaternion
 from tf.transformations import quaternion_from_euler
-import math
 
 def publish_path():
     # Initialize the node
@@ -29,7 +29,7 @@ def publish_path():
         pose.pose.position = Point(x=2 * math.cos(angle), y=2 * math.sin(angle), z=0)
 
         # Calculate the tangent vector at the current point
-                
+
         # Set the orientation of the PoseStamped message to the quaternion that represents the rotation from the positive x-axis to the tangent vector
         quat = Quaternion(*quaternion_from_euler(0, 0, angle+(3.14159/2.0)))
         pose.pose.orientation = quat
