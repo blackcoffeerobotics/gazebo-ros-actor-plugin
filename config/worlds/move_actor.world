@@ -36,9 +36,9 @@
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
-      <plugin name="actor_plugin" filename="libcommand_actor.so">
-        <follow_mode>path</follow_mode>
-        <!-- <follow_mode>velocity</follow_mode> -->
+      <plugin name="actor_plugin" filename="libgazebo_ros_actor_command.so">
+        <!-- <follow_mode>path</follow_mode> -->
+        <follow_mode>velocity</follow_mode>
         <vel_topic>/cmd_vel</vel_topic>
         <path_topic>/cmd_path</path_topic>
         <animation_factor>4.0</animation_factor>  

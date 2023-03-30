@@ -1,5 +1,5 @@
-#ifndef COMMAND_ACTOR_H
-#define COMMAND_ACTOR_H
+#ifndef GAZEBO_ROS_ACTOR_PLUGIN_INCLUDE_GAZEBO_ROS_ACTOR_COMMAND
+#define GAZEBO_ROS_ACTOR_PLUGIN_INCLUDE_GAZEBO_ROS_ACTOR_COMMAND
 
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
@@ -19,13 +19,13 @@ namespace gazebo {
 /// \brief Gazebo plugin for commanding an actor to follow
 /// a path or velocity published by other ROS node.
 
-class CommandActor : public ModelPlugin {
+class GazeboRosActorCommand : public ModelPlugin {
  public:
   /// \brief Constructor
-  CommandActor();
+  GazeboRosActorCommand();
 
   /// \brief Destructor
-  ~CommandActor();
+  ~GazeboRosActorCommand();
 
   /// \brief Load the actor plugin.
   /// \param[in] _model Pointer to the parent model.
