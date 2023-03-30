@@ -15,7 +15,7 @@ catkin_package(
   INCLUDE_DIRS 
     include
   LIBRARIES 
-    gazebo_ros_actor_plugin
+    gazebo_ros_actor_command
   CATKIN_DEPENDS
     gazebo_ros
     gazebo_plugins
@@ -32,5 +32,5 @@ include_directories(
 link_directories(${GAZEBO_LIBRARY_DIRS})
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
-add_library(command_actor src/command_actor.cpp)
-target_link_libraries(command_actor ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+add_library(gazebo_ros_actor_command src/gazebo_ros_actor_command.cpp)
+target_link_libraries(gazebo_ros_actor_command ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
