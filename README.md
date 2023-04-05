@@ -1,4 +1,4 @@
-# gazebo_ros_actor_plugin
+# Gazebo ROS Actor Plugin
 
 ## About
 
@@ -38,7 +38,7 @@ To use the gazebo_ros_actor_plugin, follow these steps:
 
 To use the plugin, you need to start a publisher that sends velocity or path commands to the actor. This package includes two example publishers:
 
-#### Velocity Publisher
+### Velocity Publisher
 
 To run this publisher, enter the following command:
 
@@ -46,7 +46,10 @@ To run this publisher, enter the following command:
 
 Then give keyboard inputs to command linear and angular velocities. This publisher is based on the `ros-noetic-teleop-twist-keyboard` package.
 
-#### Path Publisher
+![Velocity control of actor](res/actor_vel.gif)
+
+
+### Path Publisher
 
 To run this publisher, enter the following command after sourcing the workspace:
 
@@ -54,11 +57,13 @@ To run this publisher, enter the following command after sourcing the workspace:
 
 Note that the `path_publisher.py` file can be found in the `/scripts` directory in the package.
 
+![Path control of actor](res/actor_path.gif)
+
 ## Parameters in `move_actor.world`
 
 The `move_actor.world` file contains the following parameters:
 
-- `follow_mode`: The mode in which the actor will follow the commands. It can be set to either path or velocity.
+- `follow_mode`: The mode in which the actor will follow the commands. It can be set to either `path` or `velocity`.
 - `vel_topic`: The name of the topic to which velocity commands will be published. The default topic name is `/cmd_vel`.
 - `path_topic`: The name of the topic to which path commands will be published. The default topic name is `/cmd_path`.
 - `animation_factor`: Multiplier to base animation speed that adjusts the speed of both the actor's animation and foot swinging.
