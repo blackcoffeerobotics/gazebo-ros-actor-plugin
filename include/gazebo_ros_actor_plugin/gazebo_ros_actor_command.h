@@ -126,6 +126,9 @@ class GazeboRosActorCommand : public ModelPlugin {
   /// actor's current and desired orientation during rotational alignment
   double ang_tolerance_;
 
+  /// \brief Default rotation for an actor
+  double default_rotation_;
+
   /// \brief Helper function to choose a new target pose
   void ChooseNewTarget();
 
