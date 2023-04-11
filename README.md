@@ -59,6 +59,12 @@ Note that the `path_publisher.py` file can be found in the `/scripts` directory 
 
 ![Path control of actor](res/actor_path.gif)
 
+### Working with different skins
+
+To work with different skins on the actor change the `default_rotation` parameter in the world file to adjust the actor.
+
+![Different Skin Actor](res/actor_skin.gif)
+
 ## Parameters in `move_actor.world`
 
 The `move_actor.world` file contains the following parameters:
@@ -71,6 +77,7 @@ The `move_actor.world` file contains the following parameters:
 - `linear_velocity`: Speed at which actor moves along path during path-following.
 - `angular_tolerance`: Maximum allowable difference in orientation between actor's current and desired orientation during rotational alignment.
 - `angular_velocity`: Speed at which actor rotates to achieve desired orientation during rotational alignment.
+- `default_rotation`: Angle offset for the skin collada files. Set to `1.57` by default, should be changed depending on the skin.
 
 ## ROS API
 
