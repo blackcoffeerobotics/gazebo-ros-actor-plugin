@@ -68,6 +68,10 @@ void GazeboRosActorCommand::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   if (_sdf->HasElement("animation_factor")) {
     this->animation_factor_ = _sdf->Get<double>("animation_factor");
   }
+  if (_sdf->HasElement("default_rotation")) {
+    this->default_rotation_ = _sdf->Get<double>("default_rotation");
+  }
+  
 
   // Check if ROS node for Gazebo has been initialized
   if (!ros::isInitialized()) {
@@ -211,7 +215,7 @@ void GazeboRosActorCommand::OnUpdate(const common::UpdateInfo &_info) {
     // vector towards the current target position
     ignition::math::Angle yaw(0);
     if (pos.Length() != 0) {
-      yaw = atan2(pos.Y(), pos.X()) + M_PI_2 - rpy.Z();
+      yaw = atan2(pos.Y(), pos.X()) + default_rotation_ - rpy.Z();
       yaw.Normalize();
     }
     if (yaw < 0)
@@ -219,7 +223,7 @@ void GazeboRosActorCommand::OnUpdate(const common::UpdateInfo &_info) {
     // Check if required angular displacement is greater than tolerance
     if (std::abs(yaw.Radian()) > this->ang_tolerance_) {
 
-      pose.Rot() = ignition::math::Quaterniond(M_PI_2, 0, rpy.Z()+
+      pose.Rot() = ignition::math::Quaterniond(default_rotation_, 0, rpy.Z()+
             rot_sign*this->ang_velocity_ * dt);
     } 
     else {
@@ -228,7 +232,7 @@ void GazeboRosActorCommand::OnUpdate(const common::UpdateInfo &_info) {
         pose.Pos().Y() += pos.Y() * this->lin_velocity_ * dt;
 
         pose.Rot() = ignition::math::Quaterniond(
-          M_PI_2, 0, rpy.Z()+yaw.Radian());
+          default_rotation_, 0, rpy.Z()+yaw.Radian());
     }
   }
   else if (this->follow_mode_ == "velocity") {
@@ -240,12 +244,12 @@ void GazeboRosActorCommand::OnUpdate(const common::UpdateInfo &_info) {
     }
 
     pose.Pos().X() += this->target_vel_.Pos().X() *
-                      sin(pose.Rot().Euler().Z()) * dt;
-    pose.Pos().Y() -= this->target_vel_.Pos().X() *
-                      cos(pose.Rot().Euler().Z()) * dt;
+                      cos(pose.Rot().Euler().Z() - default_rotation_) * dt;
+    pose.Pos().Y() += this->target_vel_.Pos().X() *
+                      sin(pose.Rot().Euler().Z() - default_rotation_) * dt;
 
     pose.Rot() = ignition::math::Quaterniond(
-      M_PI_2, 0, rpy.Z()+this->target_vel_.Rot().Euler().Z()*dt);
+      default_rotation_, 0, rpy.Z()+this->target_vel_.Rot().Euler().Z()*dt);
   }
 
   // Distance traveled is used to coordinate motion with the walking animation
@@ -254,7 +258,7 @@ void GazeboRosActorCommand::OnUpdate(const common::UpdateInfo &_info) {
 
   this->actor_->SetWorldPose(pose, false, false);
   this->actor_->SetScriptTime(
-    this->actor_->ScriptTime() + (distanceTraveled * this->animation_factor_));
+  this->actor_->ScriptTime() + (distanceTraveled * this->animation_factor_));
   this->last_update_ = _info.simTime;
 }
 
