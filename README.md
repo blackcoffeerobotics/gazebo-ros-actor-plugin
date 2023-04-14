@@ -32,7 +32,7 @@ To use the gazebo_ros_actor_plugin, follow these steps:
 3. Edit the parameters in the `move_actor.world` file and choose the method of subscription using the `follow_mode` tag corresponding to the plugin of the actor `actor1`. It could be either subscribing to path or velocity commands. 
 4. Launch the `sim.launch` file by running:
 
-        roslaunch gazebo_ros_actor_plugin sim.launch
+    roslaunch gazebo_ros_actor_plugin sim.launch
 
 ### Running the Publishers
 
@@ -77,7 +77,7 @@ The `move_actor.world` file contains the following parameters:
 - `linear_velocity`: Speed at which actor moves along path during path-following.
 - `angular_tolerance`: Maximum allowable difference in orientation between actor's current and desired orientation during rotational alignment.
 - `angular_velocity`: Speed at which actor rotates to achieve desired orientation during rotational alignment.
-- `default_rotation`: Angle offset for the skin collada files. Set to `1.57` by default, should be changed depending on the skin.
+- `default_rotation`: Angle offset for skin collada files. It's set to 1.57 by default but should be adjusted for the skin. It can be changed by adding or subtracting pi/2 to make the actor stand upright. For "DoctorFemaleWalk" actor, the value is "0".
 
 ## ROS API
 
