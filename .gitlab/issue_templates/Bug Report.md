@@ -1,12 +1,3 @@
----
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: bug
-assignees: ''
-
----
-
 ### Description
 
 Overview of your issue here.
@@ -31,6 +22,12 @@ Tell us what happens instead.
 
 * Either build using debug and backtrace using gdb, and provide the backtrace images.
 
-	  catkin build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+	  # ROS1
+		catkin build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+		roslaunch --prefix 'gdb -ex run --args' <package> <launchfile>
+
+	  # ROS2
+		colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+		ros2 launch --prefix 'gdb -ex run --args' <package> <launchfile>
 
 * Or if you can't build with debug, provide console output images.
