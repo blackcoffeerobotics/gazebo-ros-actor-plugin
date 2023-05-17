@@ -87,3 +87,18 @@ The `gazebo_ros_actor_plugin` subscribes to information from the following inbou
 - `/cmd_path`: to receive path commands
 
 Note that the names of the topics can be overridden in the `move_actor.world` file present in this package's `/config` directory.
+
+## Additional Resources
+
+For more detailed information and examples, please refer to the following resources:
+
+- [Detailed Article](https://blackcoffeerobotics.com/blog/ros-plugin-to-control-actors-in-gazebo-simulation): This article provides in-depth support and explanation of the contents of this repository.
+- [Demo Videos](https://youtube.com/playlist?list=PL_jbb--NzdcAPhl06Fey7m6UO2aNw8a8d): This video playlist demonstrates Actor Plugin in action and also shows potential use case of this work, showcasing crowd behavior.
+
+## References
+
+Here are some additional references that may be useful:
+
+- [Gazebo Actor Tutorial](http://classic.gazebosim.org/tutorials?tut=actor&cat=build_robot)
+- [Writing a Gazebo Plugin Tutorial](https://classic.gazebosim.org/tutorials?cat=write_plugin)
+- [Gazebo Actor API Documentation](http://osrf-distributions.s3.amazonaws.com/gazebo/api/dev/classgazebo_1_1physics_1_1Actor.html)
