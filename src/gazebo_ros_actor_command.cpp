@@ -5,8 +5,8 @@
 #include <cmath>
 #include <functional>
 
-#include <ignition/math.hh>
 #include "gazebo/physics/physics.hh"
+#include <ignition/math.hh>
 
 using namespace gazebo;
 
@@ -238,6 +238,8 @@ void GazeboRosActorCommand::OnUpdate(const common::UpdateInfo &_info) {
 
     if (this->abort_ || this->target_poses_.empty()) {
       this->target_poses_.clear();
+      this->target_pose_.X() = pose.Pos().X();
+      this->target_pose_.Y() = pose.Pos().Y();
       this->idx_ = 0;
       pos.X() = 0;
       pos.Y() = 0;
@@ -272,7 +274,8 @@ void GazeboRosActorCommand::OnUpdate(const common::UpdateInfo &_info) {
       yaw.Normalize();
     }
 
-    if (yaw < 0) rot_sign = -1;
+    if (yaw < 0)
+      rot_sign = -1;
     // Check if required angular displacement is greater than tolerance
     if (std::abs(yaw.Radian()) > this->ang_tolerance_) {
       pose.Rot() = ignition::math::Quaterniond(
