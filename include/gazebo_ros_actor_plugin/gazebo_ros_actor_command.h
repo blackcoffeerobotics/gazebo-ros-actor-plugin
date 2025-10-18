@@ -1,140 +1,146 @@
 #ifndef GAZEBO_ROS_ACTOR_PLUGIN_INCLUDE_GAZEBO_ROS_ACTOR_COMMAND
 #define GAZEBO_ROS_ACTOR_PLUGIN_INCLUDE_GAZEBO_ROS_ACTOR_COMMAND
 
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
-#include <geometry_msgs/Twist.h>
-#include <nav_msgs/Path.h>
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+#include <nav_msgs/msg/path.hpp>
 
 #include <string>
 #include <queue>
 #include <vector>
+#include <memory>
+#include <chrono>
+#include <thread>
 
-#include "gazebo/common/Plugin.hh"
-#include "gazebo/physics/physics.hh"
-#include "gazebo/util/system.hh"
+#include <gz/sim/System.hh>
+#include <gz/sim/Entity.hh>
+#include <gz/sim/EntityComponentManager.hh>
+#include <gz/sim/EventManager.hh>
+#include <gz/sim/components/Actor.hh>
+#include <gz/sim/components/Name.hh>
+#include <gz/sim/components/Pose.hh>
+#include <gz/sim/components/AnimationName.hh>
+#include <gz/sim/components/AnimationTime.hh>
+#include <gz/sim/Util.hh>
+#include <gz/math/Pose3.hh>
+#include <gz/math/Vector3.hh>
+#include <gz/math/Quaternion.hh>
 
-namespace gazebo {
+#include <sdf/Element.hh>
+
+namespace gazebo_ros_actor_plugin {
 
 /// \brief Gazebo plugin for commanding an actor to follow
-/// a path or velocity published by other ROS node.
+/// a path or velocity published by other ROS2 node.
 
-class GazeboRosActorCommand : public ModelPlugin {
+class GazeboRosActorCommand :
+    public gz::sim::System,
+    public gz::sim::ISystemConfigure,
+    public gz::sim::ISystemPreUpdate,
+    public gz::sim::ISystemPostUpdate {
  public:
   /// \brief Constructor
   GazeboRosActorCommand();
 
   /// \brief Destructor
-  ~GazeboRosActorCommand();
+  ~GazeboRosActorCommand() override;
 
-  /// \brief Load the actor plugin.
-  /// \param[in] _model Pointer to the parent model.
-  /// \param[in] _sdf Pointer to the plugin's SDF elements.
-  virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
+  /// \brief Configure the system
+  /// \param[in] _entity The entity this plugin is attached to
+  /// \param[in] _sdf The SDF Element associated with this system plugin
+  /// \param[in] _ecm The EntityComponentManager of the given simulation instance
+  /// \param[in] _eventMgr The EventManager of the given simulation instance
+  void Configure(const gz::sim::Entity &_entity,
+                 const std::shared_ptr<const sdf::Element> &_sdf,
+                 gz::sim::EntityComponentManager &_ecm,
+                 gz::sim::EventManager &_eventMgr) override;
 
-  // \brief Reset the plugin.
-  virtual void Reset();
+  /// \brief Called each simulation iteration
+  /// \param[in] _info Simulation update info
+  /// \param[in] _ecm Mutable reference to the EntityComponentManager
+  void PreUpdate(const gz::sim::UpdateInfo &_info,
+                 gz::sim::EntityComponentManager &_ecm) override;
+
+  /// \brief Called after physics update
+  /// \param[in] _info Simulation update info
+  /// \param[in] _ecm Const reference to the EntityComponentManager
+  void PostUpdate(const gz::sim::UpdateInfo &_info,
+                  const gz::sim::EntityComponentManager &_ecm) override;
 
  private:
   /// \brief Callback function for receiving velocity commands from a publisher.
-  /// \param[in] _model Pointer to the incoming velocity message.
-  void VelCallback(const geometry_msgs::Twist::ConstPtr &msg);
+  /// \param[in] msg Pointer to the incoming velocity message.
+  void VelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
   /// \brief Callback function for receiving path commands from a publisher.
-  /// \param[in] _model Pointer to the incoming path message.
-  void PathCallback(const nav_msgs::Path::ConstPtr &msg);
+  /// \param[in] msg Pointer to the incoming path message.
+  void PathCallback(const nav_msgs::msg::Path::SharedPtr msg);
 
-  /// \brief Function that is called every update cycle.
-  /// \param[in] _info Timing information.
-  void OnUpdate(const common::UpdateInfo &_info);
+  /// \brief Helper function to choose a new target pose
+  void ChooseNewTarget();
 
-  /// \brief Custom callback queue thread for velocity commands.
-  void VelQueueThread();
+  /// \brief ROS2 node
+  rclcpp::Node::SharedPtr rosNode_;
 
-  /// \brief Custom callback queue thread for path commands.
-  void PathQueueThread();
+  /// \brief Subscribers for velocity and path commands
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velSub_;
+  rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr pathSub_;
 
-  /// \brief ROS node handle.
-  ros::NodeHandle *ros_node_;
+  /// \brief ROS2 executor and thread
+  rclcpp::executors::MultiThreadedExecutor::SharedPtr executor_;
+  std::thread executorThread_;
 
-  /// \brief Subscribers for velocity and path commands.
-  ros::Subscriber vel_sub_;
-  ros::Subscriber path_sub_;
+  /// \brief Topic names for velocity and path commands
+  std::string velTopic_;
+  std::string pathTopic_;
 
-  /// \brief Custom callback queues for velocity and path commands.
-  ros::CallbackQueue vel_queue_;
-  ros::CallbackQueue path_queue_;
-
-  /// \brief Custom callback queue threads for velocity and path commands.
-  boost::thread velCallbackQueueThread_;
-  boost::thread pathCallbackQueueThread_;
-
-  /// \brief Topic names for velocity and path commands.
-  std::string vel_topic_;
-  std::string path_topic_;
-
-  /// \brief Pointer to the parent actor.
-  physics::ActorPtr actor_;
-
-  /// \brief Pointer to the world
-  physics::WorldPtr world_;
-
-  /// \brief Pointer to the sdf element.
-  sdf::ElementPtr sdf_;
+  /// \brief Entity ID of the actor
+  gz::sim::Entity actorEntity_;
 
   /// \brief Multiplier to base animation speed to adjust
-  /// the speed of actor's animation and foot swinging.
-  double animation_factor_;
+  /// the speed of actor's animation and foot swinging
+  double animationFactor_;
 
-  /// \brief List of connections
-  std::vector<event::ConnectionPtr> connections_;
+  /// \brief Time of the last update
+  std::chrono::steady_clock::duration lastUpdate_;
 
-  /// \brief Time of the last update.
-  common::Time last_update_;
-
-  /// \brief Custom trajectory info.
-  physics::TrajectoryInfoPtr trajectoryInfo_;
-
-  /// \brief Flag to determine if
-  /// the plugin will follow a path or velocity subscriber
-  std::string follow_mode_;
+  /// \brief Flag to determine if the plugin will follow a path or velocity
+  std::string followMode_;
 
   /// \brief Target walking velocity for the actor
-  ignition::math::Pose3d target_vel_;
+  gz::math::Pose3d targetVel_;
 
   /// \brief Speed at which actor moves along path during path-following
-  double lin_velocity_;
+  double linVelocity_;
 
   /// \brief Speed at which actor rotates to achieve desired orientation
-  /// during rotational alignment
-  double ang_velocity_;
+  double angVelocity_;
 
   /// \brief Current target pose
-  ignition::math::Vector3d target_pose_;
+  gz::math::Vector3d targetPose_;
 
   /// \brief List of target poses
-  std::vector<ignition::math::Vector3d> target_poses_;
+  std::vector<gz::math::Vector3d> targetPoses_;
 
   /// \brief Index of current target pose
   int idx_;
 
   /// \brief Maximum allowed distance between actor and target pose
-  /// during path-following
-  double lin_tolerance_;
+  double linTolerance_;
 
-  /// \brief Maximum allowable difference in orientation between
-  /// actor's current and desired orientation during rotational alignment
-  double ang_tolerance_;
+  /// \brief Maximum allowable difference in orientation
+  double angTolerance_;
 
   /// \brief Default rotation for an actor
-  double default_rotation_;
-
-  /// \brief Helper function to choose a new target pose
-  void ChooseNewTarget();
+  double defaultRotation_;
 
   /// \brief Data structure for saving velocity command
-  std::queue<ignition::math::Vector3d> cmd_queue_;
-};
-}
+  std::queue<gz::math::Vector3d> cmdQueue_;
 
-#endif // COMMAND_ACTOR_H
+  /// \brief Mutex for thread safety
+  std::mutex mutex_;
+};
+
+} // namespace gazebo_ros_actor_plugin
+
+#endif // GAZEBO_ROS_ACTOR_PLUGIN_INCLUDE_GAZEBO_ROS_ACTOR_COMMAND
