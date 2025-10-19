@@ -16,11 +16,10 @@
 #include <gz/sim/Entity.hh>
 #include <gz/sim/EntityComponentManager.hh>
 #include <gz/sim/EventManager.hh>
+#include <gz/sim/Actor.hh>
 #include <gz/sim/components/Actor.hh>
 #include <gz/sim/components/Name.hh>
 #include <gz/sim/components/Pose.hh>
-#include <gz/sim/components/AnimationName.hh>
-#include <gz/sim/components/AnimationTime.hh>
 #include <gz/sim/Util.hh>
 #include <gz/math/Pose3.hh>
 #include <gz/math/Vector3.hh>

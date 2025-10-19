@@ -51,6 +51,30 @@ colcon build --packages-select gazebo_ros_actor_plugin
 source ~/ros2_ws/install/setup.bash
 ```
 
+### Docker Installation (Alternative)
+
+If you prefer using Docker:
+
+```bash
+# Build the Docker image
+docker build -t bcr_ros2-jazzy_gz-harmonic:latest .
+
+# Launch the container
+cd docker_scripts
+./launch_container.sh
+
+# Enter the container shell
+./bashing_container.sh
+
+# Inside the container, build the workspace
+cd /root/ros2_ws
+colcon build --packages-select gazebo_ros_actor_plugin
+source install/setup.bash
+
+# To stop the container
+./stop_container.sh
+```
+
 ## Usage
 
 ### Running the Plugin

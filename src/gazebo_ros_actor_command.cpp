@@ -2,12 +2,13 @@
 
 #include <gz/plugin/Register.hh>
 #include <gz/common/Profiler.hh>
+#include <gz/math/Angle.hh>
 
 #include <cmath>
 #include <functional>
 
 #define WALKING_ANIMATION "walking"
-#define GZ_DTOR(x) ((x) * M_PI / 180.0)
+// GZ_DTOR is already defined in gz/math/Angle.hh
 
 using namespace gazebo_ros_actor_plugin;
 
@@ -311,15 +312,13 @@ void GazeboRosActorCommand::PreUpdate(
   // Update actor pose
   _ecm.SetComponentData<gz::sim::components::Pose>(this->actorEntity_, newPose);
   
-  // Update animation time
-  auto animTimeComp = _ecm.Component<gz::sim::components::AnimationTime>(this->actorEntity_);
-  if (animTimeComp) {
-    auto currentAnimTime = animTimeComp->Data();
+  // Update animation time using Actor helper class
+  gz::sim::Actor actor(this->actorEntity_);
+  auto currentAnimTime = actor.AnimationTime(_ecm);
+  if (currentAnimTime) {
     std::chrono::duration<double> animTimeDelta(distanceTraveled * this->animationFactor_);
-    auto newAnimTime = currentAnimTime + std::chrono::duration_cast<std::chrono::steady_clock::duration>(animTimeDelta);
-    
-    _ecm.SetComponentData<gz::sim::components::AnimationTime>(
-        this->actorEntity_, gz::sim::components::AnimationTime(newAnimTime));
+    auto newAnimTime = *currentAnimTime + std::chrono::duration_cast<std::chrono::steady_clock::duration>(animTimeDelta);
+    actor.SetAnimationTime(_ecm, newAnimTime);
   }
   
   this->lastUpdate_ = _info.simTime;

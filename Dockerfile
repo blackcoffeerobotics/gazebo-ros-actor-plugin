@@ -1,5 +1,5 @@
-# ROS Noetic
-FROM ros:noetic
+# ROS 2 Jazzy
+FROM ros:jazzy
 
 # Prevent console from interacting with the user
 ARG DEBIAN_FRONTEND=noninteractive
@@ -7,20 +7,15 @@ ARG DEBIAN_FRONTEND=noninteractive
 # This is required else apt-get update throws Hash mismatch error
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* && apt-get update -yqqq
 
-# Ensure timeouts are set to a minimum to enable faster exit
-RUN sed -i -e 's/_TIMEOUT_SIGINT  = 15.0/_TIMEOUT_SIGINT  = 1e-323/g' \
-    -e 's/_TIMEOUT_SIGTERM = 2.0/_TIMEOUT_SIGTERM = 1e-323/g' \
-    /opt/ros/noetic/lib/python3/dist-packages/roslaunch/nodeprocess.py
-
-# Set folder for RUNTIME_DIR for RViz
-RUN mkdir tmp/runtime-root && chmod 0700 tmp/runtime-root
+# Set folder for RUNTIME_DIR for RViz2
+RUN mkdir -p /tmp/runtime-root && chmod 0700 /tmp/runtime-root
 ENV XDG_RUNTIME_DIR='/tmp/runtime-root'
 
-# Install catkin_tools for catkin build, RViz and Gazebo
+# Install colcon for ROS 2 build, RViz2 and Gazebo
 RUN apt-get install --no-install-recommends -yqqq \
-    python3-catkin-tools \
-    ros-$ROS_DISTRO-rviz \
-    ros-$ROS_DISTRO-gazebo-ros
+    python3-colcon-common-extensions \
+    ros-$ROS_DISTRO-rviz2 \
+    ros-$ROS_DISTRO-ros-gz
 
 # Optional
 #--------------
@@ -39,12 +34,13 @@ RUN apt-get install --no-install-recommends -yqqq \
 # RUN apt-get install --no-install-recommends -yqqq \
 #     ros-$ROS_DISTRO-xacro
 
-# Install gazebo_ros_pkgs
+# Install ros_gz packages for Gazebo integration
 RUN apt-get install --no-install-recommends -yqqq \
-    ros-noetic-gazebo-ros-pkgs ros-noetic-gazebo-ros-control
+    ros-$ROS_DISTRO-ros-gz-sim \
+    ros-$ROS_DISTRO-ros-gz-bridge
 
 # Install teleop_twist_keyboard to send cmd_vel commands
 RUN apt-get install --no-install-recommends -yqqq \
-    ros-noetic-teleop-twist-keyboard
+    ros-$ROS_DISTRO-teleop-twist-keyboard
 
-RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc
+RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc

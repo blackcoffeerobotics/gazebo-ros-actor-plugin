@@ -1,2 +1,2 @@
 #!/bin/bash
-docker stop ros1_actor_plugin && docker rm ros1_actor_plugin
+docker stop ros2_actor_plugin && docker rm ros2_actor_plugin
