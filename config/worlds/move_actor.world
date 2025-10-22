@@ -3,16 +3,36 @@
   <world name="default">
 
     <!-- A global light source -->
-    <include>
-      <uri>model://sun</uri>
-	    <pose>0 0 0 0 0 0</pose>
-    </include>
+    <!-- Removed include for model://sun as it's Gazebo Classic; using built-in lighting -->
 
     <!-- A ground plane -->
-    <include>
-      <uri>model://ground_plane</uri>
-      <pose>0 0 0 0 0 0</pose>
-    </include>
+    <!-- Removed include for model://ground_plane as it's Gazebo Classic; adding simple ground plane -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.8 0.8 0.8 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
 
     <scene>
       <ambient>0.4 0.4 0.4 1</ambient>
@@ -28,16 +48,21 @@
     <actor name="actor1">
       <pose>0 0 1.2138 0 0 0</pose>
       <skin>
-        <filename>moonwalk.dae</filename>
-        <!-- <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename> -->
+        <!-- <filename>moonwalk.dae</filename> -->
+        <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename>
         <scale>1.0</scale>
       </skin>
       <animation name="walking">
-        <filename>walk.dae</filename>
-        <!-- <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename> -->
+        <!-- <filename>walk.dae</filename> -->
+        <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename>
         <scale>1.000000</scale>
         <interpolate_x>true</interpolate_x>
       </animation>
+      
+      <!-- Add a link so the actor can be moved programmatically -->
+      <link name="actor_link">
+        <pose>0 0 0 0 0 0</pose>
+      </link>
       
       <!-- Updated plugin syntax for Gazebo Harmonic -->
       <plugin filename="libgazebo_ros_actor_plugin.so" 

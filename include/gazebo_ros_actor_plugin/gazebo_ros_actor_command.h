@@ -1,16 +1,13 @@
 #ifndef GAZEBO_ROS_ACTOR_PLUGIN_INCLUDE_GAZEBO_ROS_ACTOR_COMMAND
 #define GAZEBO_ROS_ACTOR_PLUGIN_INCLUDE_GAZEBO_ROS_ACTOR_COMMAND
 
-#include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/twist.hpp>
-#include <nav_msgs/msg/path.hpp>
-
 #include <string>
 #include <queue>
 #include <vector>
 #include <memory>
 #include <chrono>
 #include <thread>
+#include <mutex>
 
 #include <gz/sim/System.hh>
 #include <gz/sim/Entity.hh>
@@ -24,6 +21,8 @@
 #include <gz/math/Pose3.hh>
 #include <gz/math/Vector3.hh>
 #include <gz/math/Quaternion.hh>
+#include <gz/transport/Node.hh>
+#include <gz/msgs/twist.pb.h>
 
 #include <sdf/Element.hh>
 
@@ -69,29 +68,16 @@ class GazeboRosActorCommand :
  private:
   /// \brief Callback function for receiving velocity commands from a publisher.
   /// \param[in] msg Pointer to the incoming velocity message.
-  void VelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
-
-  /// \brief Callback function for receiving path commands from a publisher.
-  /// \param[in] msg Pointer to the incoming path message.
-  void PathCallback(const nav_msgs::msg::Path::SharedPtr msg);
+  void VelCallback(const gz::msgs::Twist &msg);
 
   /// \brief Helper function to choose a new target pose
   void ChooseNewTarget();
 
-  /// \brief ROS2 node
-  rclcpp::Node::SharedPtr rosNode_;
+  /// \brief GZ transport node
+  gz::transport::Node node_;
 
-  /// \brief Subscribers for velocity and path commands
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velSub_;
-  rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr pathSub_;
-
-  /// \brief ROS2 executor and thread
-  rclcpp::executors::MultiThreadedExecutor::SharedPtr executor_;
-  std::thread executorThread_;
-
-  /// \brief Topic names for velocity and path commands
+  /// \brief Topic name for velocity commands
   std::string velTopic_;
-  std::string pathTopic_;
 
   /// \brief Entity ID of the actor
   gz::sim::Entity actorEntity_;

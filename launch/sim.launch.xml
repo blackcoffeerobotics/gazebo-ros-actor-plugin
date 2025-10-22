@@ -1,0 +1,18 @@
+<launch>
+
+  <!-- <arg name="world_file" default="empty.world"/> -->
+
+  <env name="GAZEBO_MODEL_PATH" value="$(find gazebo_ros_actor_plugin)/config/skins/"/>
+  <!-- <env name="GAZEBO_RESOURCE_PATH" value="$(find world_generation)/config/files/"/> -->
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find gazebo_ros_actor_plugin)/config/worlds/move_actor.world"/>
+    <!-- world_name is wrt GAZEBO_RESOURCE_PATH environment variable -->
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+    <arg name="verbose" value="true"/>
+  </include>
+</launch>

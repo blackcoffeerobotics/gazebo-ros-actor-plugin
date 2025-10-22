@@ -18,6 +18,7 @@ GazeboRosActorCommand::GazeboRosActorCommand()
   animationFactor_(4.0),
   lastUpdate_(std::chrono::steady_clock::duration::zero()),
   followMode_("velocity"),
+  targetVel_(gz::math::Pose3d::Zero),
   linVelocity_(1.0),
   angVelocity_(GZ_DTOR(10)),
   idx_(0),
@@ -28,20 +29,7 @@ GazeboRosActorCommand::GazeboRosActorCommand()
 
 /////////////////////////////////////////////////
 GazeboRosActorCommand::~GazeboRosActorCommand() {
-  // Stop the executor
-  if (this->executor_) {
-    this->executor_->cancel();
-  }
-  
-  // Join the executor thread
-  if (this->executorThread_.joinable()) {
-    this->executorThread_.join();
-  }
-  
-  // Shutdown ROS node
-  if (this->rosNode_) {
-    this->rosNode_.reset();
-  }
+  // Nothing to clean up for GZ transport node
 }
 
 /////////////////////////////////////////////////
@@ -67,7 +55,6 @@ void GazeboRosActorCommand::Configure(
   // Set default values for parameters
   this->followMode_ = "velocity";
   this->velTopic_ = "/cmd_vel";
-  this->pathTopic_ = "/cmd_path";
   this->linTolerance_ = 0.1;
   this->linVelocity_ = 1.0;
   this->angTolerance_ = GZ_DTOR(5);
@@ -81,9 +68,6 @@ void GazeboRosActorCommand::Configure(
   }
   if (_sdf->HasElement("vel_topic")) {
     this->velTopic_ = _sdf->Get<std::string>("vel_topic");
-  }
-  if (_sdf->HasElement("path_topic")) {
-    this->pathTopic_ = _sdf->Get<std::string>("path_topic");
   }
   if (_sdf->HasElement("linear_tolerance")) {
     this->linTolerance_ = _sdf->Get<double>("linear_tolerance");
@@ -106,53 +90,20 @@ void GazeboRosActorCommand::Configure(
   
   gzmsg << "Actor control mode: " << this->followMode_ << std::endl;
   gzmsg << "Velocity topic: " << this->velTopic_ << std::endl;
-  gzmsg << "Path topic: " << this->pathTopic_ << std::endl;
   
-  // Initialize ROS2 node
-  if (!rclcpp::ok()) {
-    rclcpp::init(0, nullptr);
+  // Subscribe to GZ topics
+  if (!this->node_.Subscribe(this->velTopic_, &GazeboRosActorCommand::VelCallback, this)) {
+    gzerr << "Failed to subscribe to velocity topic: " << this->velTopic_ << std::endl;
+  } else {
+    gzmsg << "Subscribed to velocity topic: " << this->velTopic_ << std::endl;
   }
   
-  std::string nodeName = "gazebo_actor_plugin_" + actorName;
-  this->rosNode_ = std::make_shared<rclcpp::Node>(nodeName);
-  
-  gzmsg << "ROS2 node created: " << nodeName << std::endl;
-  
-  // Create velocity subscriber
-  this->velSub_ = this->rosNode_->create_subscription<geometry_msgs::msg::Twist>(
-      this->velTopic_, 10,
-      std::bind(&GazeboRosActorCommand::VelCallback, this, std::placeholders::_1));
-  
-  // Create path subscriber
-  this->pathSub_ = this->rosNode_->create_subscription<nav_msgs::msg::Path>(
-      this->pathTopic_, 10,
-      std::bind(&GazeboRosActorCommand::PathCallback, this, std::placeholders::_1));
-  
-  // Create and start executor in a separate thread
-  this->executor_ = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
-  this->executor_->add_node(this->rosNode_);
-  this->executorThread_ = std::thread([this]() { this->executor_->spin(); });
-  
-  gzmsg << "ROS2 subscriptions created and executor started." << std::endl;
-  
-  // Initialize target poses with origin
+    // Initialize target poses with origin
   this->targetPoses_.push_back(gz::math::Vector3d(0.0, 0.0, 0.0));
   this->targetPose_ = this->targetPoses_.at(this->idx_);
   
-  // Check if animation exists
-  auto animNameComp = _ecm.Component<gz::sim::components::AnimationName>(this->actorEntity_);
-  if (animNameComp) {
-    gzmsg << "Actor has animation: " << animNameComp->Data() << std::endl;
-  } else {
-    gzwarn << "Actor does not have animation component." << std::endl;
-  }
-  
-  // Create AnimationTime component if it doesn't exist
-  if (!_ecm.Component<gz::sim::components::AnimationTime>(this->actorEntity_)) {
-    _ecm.CreateComponent(this->actorEntity_,
-        gz::sim::components::AnimationTime(std::chrono::steady_clock::duration::zero()));
-    gzmsg << "Created AnimationTime component for actor." << std::endl;
-  }
+  // Don't touch AnimationTime here - let PreUpdate handle it
+  // The actor system will create it based on the SDF <auto_start> setting
   
   this->lastUpdate_ = std::chrono::steady_clock::duration::zero();
   
@@ -160,49 +111,12 @@ void GazeboRosActorCommand::Configure(
 }
 
 /////////////////////////////////////////////////
-void GazeboRosActorCommand::VelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
+void GazeboRosActorCommand::VelCallback(const gz::msgs::Twist &msg) {
   std::lock_guard<std::mutex> lock(this->mutex_);
   gz::math::Vector3d velCmd;
-  velCmd.X() = msg->linear.x;
-  velCmd.Z() = msg->angular.z;
+  velCmd.X() = msg.linear().x();
+  velCmd.Z() = msg.angular().z();
   this->cmdQueue_.push(velCmd);
-}
-
-/////////////////////////////////////////////////
-void GazeboRosActorCommand::PathCallback(const nav_msgs::msg::Path::SharedPtr msg) {
-  std::lock_guard<std::mutex> lock(this->mutex_);
-  
-  // Extract the poses from the Path message
-  const std::vector<geometry_msgs::msg::PoseStamped>& poses = msg->poses;
-  
-  // Clear existing targets (except the first one which is origin)
-  if (this->targetPoses_.size() > 1) {
-    this->targetPoses_.erase(this->targetPoses_.begin() + 1, this->targetPoses_.end());
-  }
-  
-  // Extract x, y, and yaw from each pose and store it as a target
-  for (size_t i = 0; i < poses.size(); ++i) {
-    const auto& pose = poses[i].pose;
-    const double x = pose.position.x;
-    const double y = pose.position.y;
-    
-    // Convert quaternion to yaw
-    const auto& q = pose.orientation;
-    double siny_cosp = 2.0 * (q.w * q.z + q.x * q.y);
-    double cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);
-    double yaw = std::atan2(siny_cosp, cosy_cosp);
-    
-    this->targetPoses_.push_back(gz::math::Vector3d(x, y, yaw));
-  }
-  
-  // Reset to first target
-  this->idx_ = 0;
-  if (!this->targetPoses_.empty()) {
-    this->targetPose_ = this->targetPoses_.at(this->idx_);
-  }
-  
-  RCLCPP_INFO(this->rosNode_->get_logger(),
-              "Received path with %zu waypoints", poses.size());
 }
 
 /////////////////////////////////////////////////
@@ -212,9 +126,15 @@ void GazeboRosActorCommand::PreUpdate(
   
   GZ_PROFILE("GazeboRosActorCommand::PreUpdate");
   
-  // Initialize last update on first iteration
+  // Initialize last update on first iteration and reset animation
   if (this->lastUpdate_ == std::chrono::steady_clock::duration::zero()) {
     this->lastUpdate_ = _info.simTime;
+    
+    // Reset animation time to zero on first update to stop auto-animation
+    gz::sim::Actor actor(this->actorEntity_);
+    actor.SetAnimationTime(_ecm, std::chrono::steady_clock::duration::zero());
+    gzmsg << "First PreUpdate: Reset AnimationTime to zero to stop auto-animation" << std::endl;
+    
     return;
   }
   
@@ -289,37 +209,61 @@ void GazeboRosActorCommand::PreUpdate(
     
     // Get velocity command from queue
     if (!this->cmdQueue_.empty()) {
-      this->targetVel_.Pos().X() = this->cmdQueue_.front().X();
-      this->targetVel_.Rot() = gz::math::Quaterniond(0, 0, this->cmdQueue_.front().Z());
+      gz::math::Vector3d vel = this->cmdQueue_.front();
       this->cmdQueue_.pop();
+      
+      this->targetVel_.Pos().X() = vel.X();
+      this->targetVel_.Rot() = gz::math::Quaterniond(0, 0, vel.Z());
+      
+      gzmsg << "Applied velocity: linear=" << vel.X() 
+            << ", angular=" << vel.Z() << std::endl;
     }
     
-    // Apply velocity
-    double dx = this->targetVel_.Pos().X() *
-                std::cos(currentPose.Rot().Euler().Z() - this->defaultRotation_) * dt.count();
-    double dy = this->targetVel_.Pos().X() *
-                std::sin(currentPose.Rot().Euler().Z() - this->defaultRotation_) * dt.count();
-    
-    newPose.Pos().X() += dx;
-    newPose.Pos().Y() += dy;
-    
-    double newYaw = rpy.Z() + this->targetVel_.Rot().Euler().Z() * dt.count();
-    newPose.Rot() = gz::math::Quaterniond(this->defaultRotation_, 0, newYaw);
-    
-    distanceTraveled = std::sqrt(dx * dx + dy * dy);
+    // Apply velocity (only if non-zero)
+    if (std::abs(this->targetVel_.Pos().X()) > 0.001 || 
+        std::abs(this->targetVel_.Rot().Euler().Z()) > 0.001) {
+      // Fixed: Don't subtract default_rotation from current yaw
+      double dx = this->targetVel_.Pos().X() *
+                  std::cos(currentPose.Rot().Euler().Z()) * dt.count();
+      double dy = this->targetVel_.Pos().X() *
+                  std::sin(currentPose.Rot().Euler().Z()) * dt.count();
+      
+      newPose.Pos().X() += dx;
+      newPose.Pos().Y() += dy;
+      
+      double newYaw = rpy.Z() + this->targetVel_.Rot().Euler().Z() * dt.count();
+      // Keep orientation upright - only set yaw, no roll/pitch
+      newPose.Rot() = gz::math::Quaterniond(0, 0, newYaw);
+      
+      distanceTraveled = std::sqrt(dx * dx + dy * dy);
+    } else {
+      this->targetVel_ = gz::math::Pose3d::Zero;
+    }
   }
   
-  // Update actor pose
-  _ecm.SetComponentData<gz::sim::components::Pose>(this->actorEntity_, newPose);
-  
-  // Update animation time using Actor helper class
-  gz::sim::Actor actor(this->actorEntity_);
-  auto currentAnimTime = actor.AnimationTime(_ecm);
-  if (currentAnimTime) {
-    std::chrono::duration<double> animTimeDelta(distanceTraveled * this->animationFactor_);
-    auto newAnimTime = *currentAnimTime + std::chrono::duration_cast<std::chrono::steady_clock::duration>(animTimeDelta);
-    actor.SetAnimationTime(_ecm, newAnimTime);
+  // Update actor pose - actors need special handling
+  auto poseComp = _ecm.Component<gz::sim::components::Pose>(this->actorEntity_);
+  if (poseComp) {
+    _ecm.SetComponentData<gz::sim::components::Pose>(this->actorEntity_, newPose);
+  } else {
+    _ecm.CreateComponent(this->actorEntity_, gz::sim::components::Pose(newPose));
   }
+  
+  // Mark pose as changed so the rendering updates
+  _ecm.SetChanged(this->actorEntity_, gz::sim::components::Pose::typeId, gz::sim::ComponentState::OneTimeChange);
+  
+  // Update animation time based on movement
+  if (distanceTraveled > 0.0001) {
+    // Actor is moving - advance animation
+    gz::sim::Actor actor(this->actorEntity_);
+    auto currentAnimTime = actor.AnimationTime(_ecm);
+    if (currentAnimTime) {
+      std::chrono::duration<double> animTimeDelta(distanceTraveled * this->animationFactor_);
+      auto newAnimTime = *currentAnimTime + std::chrono::duration_cast<std::chrono::steady_clock::duration>(animTimeDelta);
+      actor.SetAnimationTime(_ecm, newAnimTime);
+    }
+  }
+  // When not moving, don't update animation time - it will stay at current frame (paused)
   
   this->lastUpdate_ = _info.simTime;
 }

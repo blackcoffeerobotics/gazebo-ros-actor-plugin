@@ -43,9 +43,12 @@ def generate_launch_description():
         default_value='true',
         description='Enable ROS-Gazebo topic bridge')
     
-    # Set Gazebo resource paths
+    # Set Gazebo / Gazebo Classic resource paths so models like sun and ground_plane are found
     gz_resource_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
+        value=model_path)
+    gazebo_model_path = SetEnvironmentVariable(
+        name='GAZEBO_MODEL_PATH',
         value=model_path)
     
     # Gazebo arguments
@@ -77,7 +80,7 @@ def generate_launch_description():
         name='ros_gz_bridge',
         arguments=[
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
-            '/cmd_path@nav_msgs/msg/Path]gz.msgs.Path',
+            # '/cmd_path@nav_msgs/msg/Path@gz.msgs.Path',  # Commented out: no template specialization for this pair
         ],
         output='screen',
         condition=IfCondition(LaunchConfiguration('enable_bridge'))
@@ -89,6 +92,7 @@ def generate_launch_description():
         verbose_arg,
         bridge_arg,
         gz_resource_path,
+        gazebo_model_path,
         gz_sim,
         ros_gz_bridge,
     ])
