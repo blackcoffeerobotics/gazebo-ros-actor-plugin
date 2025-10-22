@@ -19,8 +19,10 @@ find_package(gz-sim8 REQUIRED)
 find_package(gz-plugin2 REQUIRED)
 find_package(gz-common5 REQUIRED)
 find_package(gz-math7 REQUIRED)
+find_package(gz-transport13 REQUIRED)
+find_package(gz-msgs10 REQUIRED)
 
-# Add library
+# Add plugin library
 add_library(${PROJECT_NAME} SHARED
   src/gazebo_ros_actor_command.cpp
 )
@@ -43,11 +45,31 @@ target_link_libraries(${PROJECT_NAME}
   gz-math7::gz-math7
 )
 
-# Install library
-install(TARGETS ${PROJECT_NAME}
+# Add path bridge node executable
+add_executable(path_bridge_node
+  src/path_bridge_node.cpp
+)
+
+target_include_directories(path_bridge_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+ament_target_dependencies(path_bridge_node
+  rclcpp
+  nav_msgs
+)
+
+target_link_libraries(path_bridge_node
+  gz-transport13::gz-transport13
+  gz-msgs10::gz-msgs10
+)
+
+# Install library and executables
+install(TARGETS ${PROJECT_NAME} path_bridge_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 # Install include files
@@ -70,6 +92,7 @@ install(DIRECTORY
 # Install scripts
 install(PROGRAMS
   scripts/path_publisher.py
+  scripts/path_bridge.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

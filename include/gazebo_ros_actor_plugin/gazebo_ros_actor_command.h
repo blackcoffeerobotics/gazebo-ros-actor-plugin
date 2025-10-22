@@ -23,6 +23,7 @@
 #include <gz/math/Quaternion.hh>
 #include <gz/transport/Node.hh>
 #include <gz/msgs/twist.pb.h>
+#include <gz/msgs/pose_v.pb.h>
 
 #include <sdf/Element.hh>
 
@@ -70,6 +71,10 @@ class GazeboRosActorCommand :
   /// \param[in] msg Pointer to the incoming velocity message.
   void VelCallback(const gz::msgs::Twist &msg);
 
+  /// \brief Callback function for receiving path commands from a publisher.
+  /// \param[in] msg Pointer to the incoming path message (Pose_V = vector of poses).
+  void PathCallback(const gz::msgs::Pose_V &msg);
+
   /// \brief Helper function to choose a new target pose
   void ChooseNewTarget();
 
@@ -78,6 +83,9 @@ class GazeboRosActorCommand :
 
   /// \brief Topic name for velocity commands
   std::string velTopic_;
+
+  /// \brief Topic name for path commands
+  std::string pathTopic_;
 
   /// \brief Entity ID of the actor
   gz::sim::Entity actorEntity_;
@@ -121,6 +129,9 @@ class GazeboRosActorCommand :
 
   /// \brief Data structure for saving velocity command
   std::queue<gz::math::Vector3d> cmdQueue_;
+
+  /// \brief Data structure for saving path poses
+  std::queue<std::vector<gz::math::Vector3d>> pathQueue_;
 
   /// \brief Mutex for thread safety
   std::mutex mutex_;

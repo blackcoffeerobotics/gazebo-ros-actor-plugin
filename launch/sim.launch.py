@@ -86,6 +86,14 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('enable_bridge'))
     )
     
+    # Path bridge node - converts ROS2 nav_msgs/Path to GZ Pose_V (C++ node)
+    path_bridge = Node(
+        package='gazebo_ros_actor_plugin',
+        executable='path_bridge_node',
+        name='path_bridge',
+        output='screen'
+    )
+    
     return LaunchDescription([
         use_sim_time_arg,
         headless_arg,
@@ -95,4 +103,5 @@ def generate_launch_description():
         gazebo_model_path,
         gz_sim,
         ros_gz_bridge,
+        path_bridge,
     ])

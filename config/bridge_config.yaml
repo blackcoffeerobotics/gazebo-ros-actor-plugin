@@ -1,0 +1,18 @@
+# ROS-Gazebo Bridge Configuration for Actor Plugin
+# This file defines topic mappings between ROS2 and Gazebo transport
+
+# Velocity command bridge (bidirectional)
+- ros_topic_name: "/cmd_vel"
+  gz_topic_name: "/cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_type_name: "gz.msgs.Twist"
+  direction: BIDIRECTIONAL
+
+# Path command bridge (ROS to Gazebo only)
+# Note: This uses tf2_msgs/TFMessage as a workaround since nav_msgs/Path is not supported
+# We'll use Pose_V which is supported for TF messages
+- ros_topic_name: "/cmd_path_gz"
+  gz_topic_name: "/cmd_path"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+  direction: ROS_TO_GZ

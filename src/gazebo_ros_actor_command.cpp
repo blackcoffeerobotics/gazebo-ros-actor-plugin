@@ -55,6 +55,7 @@ void GazeboRosActorCommand::Configure(
   // Set default values for parameters
   this->followMode_ = "velocity";
   this->velTopic_ = "/cmd_vel";
+  this->pathTopic_ = "/cmd_path";
   this->linTolerance_ = 0.1;
   this->linVelocity_ = 1.0;
   this->angTolerance_ = GZ_DTOR(5);
@@ -68,6 +69,9 @@ void GazeboRosActorCommand::Configure(
   }
   if (_sdf->HasElement("vel_topic")) {
     this->velTopic_ = _sdf->Get<std::string>("vel_topic");
+  }
+  if (_sdf->HasElement("path_topic")) {
+    this->pathTopic_ = _sdf->Get<std::string>("path_topic");
   }
   if (_sdf->HasElement("linear_tolerance")) {
     this->linTolerance_ = _sdf->Get<double>("linear_tolerance");
@@ -90,17 +94,24 @@ void GazeboRosActorCommand::Configure(
   
   gzmsg << "Actor control mode: " << this->followMode_ << std::endl;
   gzmsg << "Velocity topic: " << this->velTopic_ << std::endl;
+  gzmsg << "Path topic: " << this->pathTopic_ << std::endl;
   
-  // Subscribe to GZ topics
+  // Subscribe to BOTH GZ topics (velocity and path) to allow dynamic mode switching
   if (!this->node_.Subscribe(this->velTopic_, &GazeboRosActorCommand::VelCallback, this)) {
     gzerr << "Failed to subscribe to velocity topic: " << this->velTopic_ << std::endl;
   } else {
     gzmsg << "Subscribed to velocity topic: " << this->velTopic_ << std::endl;
   }
   
-    // Initialize target poses with origin
-  this->targetPoses_.push_back(gz::math::Vector3d(0.0, 0.0, 0.0));
-  this->targetPose_ = this->targetPoses_.at(this->idx_);
+  if (!this->node_.Subscribe(this->pathTopic_, &GazeboRosActorCommand::PathCallback, this)) {
+    gzerr << "Failed to subscribe to path topic: " << this->pathTopic_ << std::endl;
+  } else {
+    gzmsg << "Subscribed to path topic: " << this->pathTopic_ << std::endl;
+  }
+  
+  // Don't initialize with a default waypoint - wait for actual path commands
+  // this->targetPoses_.push_back(gz::math::Vector3d(0.0, 0.0, 0.0));
+  // this->targetPose_ = this->targetPoses_.at(this->idx_);
   
   // Don't touch AnimationTime here - let PreUpdate handle it
   // The actor system will create it based on the SDF <auto_start> setting
@@ -117,6 +128,46 @@ void GazeboRosActorCommand::VelCallback(const gz::msgs::Twist &msg) {
   velCmd.X() = msg.linear().x();
   velCmd.Z() = msg.angular().z();
   this->cmdQueue_.push(velCmd);
+}
+
+/////////////////////////////////////////////////
+void GazeboRosActorCommand::PathCallback(const gz::msgs::Pose_V &msg) {
+  gzmsg << "============================================" << std::endl;
+  gzmsg << "PathCallback TRIGGERED!" << std::endl;
+  gzmsg << "Received Pose_V message with " << msg.pose_size() << " poses" << std::endl;
+  
+  std::lock_guard<std::mutex> lock(this->mutex_);
+  
+  // Extract poses from the Pose_V message
+  std::vector<gz::math::Vector3d> poses;
+  
+  for (int i = 0; i < msg.pose_size(); ++i) {
+    const auto& pose = msg.pose(i);
+    double x = pose.position().x();
+    double y = pose.position().y();
+    
+    // Convert quaternion to yaw angle
+    gz::math::Quaterniond quat(
+      pose.orientation().w(),
+      pose.orientation().x(),
+      pose.orientation().y(),
+      pose.orientation().z()
+    );
+    double yaw = quat.Euler().Z();
+    
+    poses.push_back(gz::math::Vector3d(x, y, yaw));
+    
+    gzmsg << "  Waypoint " << i << ": x=" << x << ", y=" << y 
+          << ", yaw=" << yaw << std::endl;
+  }
+  
+  if (!poses.empty()) {
+    this->pathQueue_.push(poses);
+    gzmsg << "Path added to queue. Total in queue: " << this->pathQueue_.size() << std::endl;
+  } else {
+    gzmsg << "WARNING: Received empty path!" << std::endl;
+  }
+  gzmsg << "============================================" << std::endl;
 }
 
 /////////////////////////////////////////////////
@@ -151,20 +202,59 @@ void GazeboRosActorCommand::PreUpdate(
   if (this->followMode_ == "path") {
     std::lock_guard<std::mutex> lock(this->mutex_);
     
+    // Check if there's a new path command
+    if (!this->pathQueue_.empty()) {
+      // Get the new path and replace current target poses
+      this->targetPoses_ = this->pathQueue_.front();
+      this->pathQueue_.pop();
+      
+      // Reset index to start from the beginning of the new path
+      this->idx_ = 0;
+      if (!this->targetPoses_.empty()) {
+        this->targetPose_ = this->targetPoses_.at(this->idx_);
+        gzmsg << "========================================" << std::endl;
+        gzmsg << "NEW PATH LOADED with " << this->targetPoses_.size() 
+              << " waypoints" << std::endl;
+        gzmsg << "Starting from waypoint 0: [" << this->targetPose_.X() 
+              << ", " << this->targetPose_.Y() << "]" << std::endl;
+        gzmsg << "========================================" << std::endl;
+      }
+    }
+    
+    // Only proceed if we have valid target poses
+    if (this->targetPoses_.empty() || this->idx_ >= static_cast<int>(this->targetPoses_.size())) {
+      // Silently skip - no targets available yet
+      this->lastUpdate_ = _info.simTime;
+      return;
+    }
+    
     gz::math::Vector2d targetPos2d(this->targetPose_.X(), this->targetPose_.Y());
     gz::math::Vector2d currentPos2d(currentPose.Pos().X(), currentPose.Pos().Y());
     gz::math::Vector2d pos = targetPos2d - currentPos2d;
     double distance = pos.Length();
     
+    // Log path progress less frequently (every 100 frames or when waypoint changes)
+    static int logCounter = 0;
+    if (logCounter++ % 100 == 0) {
+      gzmsg << "Path mode: Distance to waypoint " << this->idx_ << ": " 
+            << distance << "m" << std::endl;
+    }
+    
     // Check if actor has reached current target position
     if (distance < this->linTolerance_) {
+      gzmsg << "Reached waypoint " << this->idx_ << "!" << std::endl;
+      
       // If there are more targets, choose new target
       if (this->idx_ < static_cast<int>(this->targetPoses_.size()) - 1) {
         this->ChooseNewTarget();
+        gzmsg << "Moving to next waypoint " << this->idx_ << ": [" 
+              << this->targetPose_.X() << ", " << this->targetPose_.Y() << "]" << std::endl;
         pos.X() = this->targetPose_.X() - currentPose.Pos().X();
         pos.Y() = this->targetPose_.Y() - currentPose.Pos().Y();
       } else {
         // All targets have been accomplished, stop moving
+        gzmsg << "PATH COMPLETED! All " << this->targetPoses_.size() 
+              << " waypoints reached." << std::endl;
         pos.X() = 0;
         pos.Y() = 0;
       }
@@ -175,32 +265,21 @@ void GazeboRosActorCommand::PreUpdate(
       pos = pos / pos.Length();
     }
     
-    int rotSign = 1;
-    double yawAngle = 0.0;
+    // Calculate target yaw to face the waypoint
+    // For path mode, we directly set the orientation without offset
+    double targetYaw = std::atan2(pos.Y(), pos.X());
     
-    // Calculate the angular displacement required
+    // Debug logging
+    gzmsg << "Direction vector: [" << pos.X() << ", " << pos.Y() << "]" << std::endl;
+    gzmsg << "Target yaw (rad): " << targetYaw << " (" << (targetYaw * 180.0 / M_PI) << " deg)" << std::endl;
+    
+    // Always set orientation to face the direction of movement
+    newPose.Rot() = gz::math::Quaterniond(0, 0, targetYaw);
+    
+    // Move towards the target position
     if (pos.Length() != 0) {
-      yawAngle = std::atan2(pos.Y(), pos.X()) + this->defaultRotation_ - rpy.Z();
-      
-      // Normalize angle to [-pi, pi]
-      while (yawAngle > M_PI) yawAngle -= 2 * M_PI;
-      while (yawAngle < -M_PI) yawAngle += 2 * M_PI;
-    }
-    
-    if (yawAngle < 0)
-      rotSign = -1;
-    
-    // Check if required angular displacement is greater than tolerance
-    if (std::abs(yawAngle) > this->angTolerance_) {
-      // Rotate towards target
-      double newYaw = rpy.Z() + rotSign * this->angVelocity_ * dt.count();
-      newPose.Rot() = gz::math::Quaterniond(this->defaultRotation_, 0, newYaw);
-    } else {
-      // Move towards the target position
       newPose.Pos().X() += pos.X() * this->linVelocity_ * dt.count();
       newPose.Pos().Y() += pos.Y() * this->linVelocity_ * dt.count();
-      newPose.Rot() = gz::math::Quaterniond(this->defaultRotation_, 0, rpy.Z() + yawAngle);
-      
       distanceTraveled = (pos * this->linVelocity_ * dt.count()).Length();
     }
     
