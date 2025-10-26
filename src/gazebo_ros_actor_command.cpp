@@ -24,7 +24,8 @@ GazeboRosActorCommand::GazeboRosActorCommand()
   idx_(0),
   linTolerance_(0.1),
   angTolerance_(GZ_DTOR(5)),
-  defaultRotation_(M_PI/2) {
+  defaultRotation_(M_PI/2),
+  pathCompletedLogged_(false) {
 }
 
 /////////////////////////////////////////////////
@@ -50,7 +51,7 @@ void GazeboRosActorCommand::Configure(
   // Get actor name for logging
   auto nameComp = _ecm.Component<gz::sim::components::Name>(this->actorEntity_);
   std::string actorName = nameComp ? nameComp->Data() : "unknown";
-  gzmsg << "GazeboRosActorCommand plugin attached to actor: " << actorName << std::endl;
+  gzmsg << "GazeboRosActorCommand attached to actor: " << actorName << std::endl;
   
   // Set default values for parameters
   this->followMode_ = "velocity";
@@ -92,21 +93,13 @@ void GazeboRosActorCommand::Configure(
     this->defaultRotation_ = _sdf->Get<double>("default_rotation");
   }
   
-  gzmsg << "Actor control mode: " << this->followMode_ << std::endl;
-  gzmsg << "Velocity topic: " << this->velTopic_ << std::endl;
-  gzmsg << "Path topic: " << this->pathTopic_ << std::endl;
-  
   // Subscribe to BOTH GZ topics (velocity and path) to allow dynamic mode switching
   if (!this->node_.Subscribe(this->velTopic_, &GazeboRosActorCommand::VelCallback, this)) {
     gzerr << "Failed to subscribe to velocity topic: " << this->velTopic_ << std::endl;
-  } else {
-    gzmsg << "Subscribed to velocity topic: " << this->velTopic_ << std::endl;
   }
   
   if (!this->node_.Subscribe(this->pathTopic_, &GazeboRosActorCommand::PathCallback, this)) {
     gzerr << "Failed to subscribe to path topic: " << this->pathTopic_ << std::endl;
-  } else {
-    gzmsg << "Subscribed to path topic: " << this->pathTopic_ << std::endl;
   }
   
   // Don't initialize with a default waypoint - wait for actual path commands
@@ -117,8 +110,6 @@ void GazeboRosActorCommand::Configure(
   // The actor system will create it based on the SDF <auto_start> setting
   
   this->lastUpdate_ = std::chrono::steady_clock::duration::zero();
-  
-  gzmsg << "GazeboRosActorCommand plugin configured successfully." << std::endl;
 }
 
 /////////////////////////////////////////////////
@@ -132,10 +123,6 @@ void GazeboRosActorCommand::VelCallback(const gz::msgs::Twist &msg) {
 
 /////////////////////////////////////////////////
 void GazeboRosActorCommand::PathCallback(const gz::msgs::Pose_V &msg) {
-  gzmsg << "============================================" << std::endl;
-  gzmsg << "PathCallback TRIGGERED!" << std::endl;
-  gzmsg << "Received Pose_V message with " << msg.pose_size() << " poses" << std::endl;
-  
   std::lock_guard<std::mutex> lock(this->mutex_);
   
   // Extract poses from the Pose_V message
@@ -156,18 +143,14 @@ void GazeboRosActorCommand::PathCallback(const gz::msgs::Pose_V &msg) {
     double yaw = quat.Euler().Z();
     
     poses.push_back(gz::math::Vector3d(x, y, yaw));
-    
-    gzmsg << "  Waypoint " << i << ": x=" << x << ", y=" << y 
-          << ", yaw=" << yaw << std::endl;
   }
   
   if (!poses.empty()) {
     this->pathQueue_.push(poses);
-    gzmsg << "Path added to queue. Total in queue: " << this->pathQueue_.size() << std::endl;
+    gzmsg << "New path received with " << poses.size() << " waypoints" << std::endl;
   } else {
-    gzmsg << "WARNING: Received empty path!" << std::endl;
+    gzwarn << "Received empty path" << std::endl;
   }
-  gzmsg << "============================================" << std::endl;
 }
 
 /////////////////////////////////////////////////
@@ -184,7 +167,6 @@ void GazeboRosActorCommand::PreUpdate(
     // Reset animation time to zero on first update to stop auto-animation
     gz::sim::Actor actor(this->actorEntity_);
     actor.SetAnimationTime(_ecm, std::chrono::steady_clock::duration::zero());
-    gzmsg << "First PreUpdate: Reset AnimationTime to zero to stop auto-animation" << std::endl;
     
     return;
   }
@@ -212,12 +194,9 @@ void GazeboRosActorCommand::PreUpdate(
       this->idx_ = 0;
       if (!this->targetPoses_.empty()) {
         this->targetPose_ = this->targetPoses_.at(this->idx_);
-        gzmsg << "========================================" << std::endl;
-        gzmsg << "NEW PATH LOADED with " << this->targetPoses_.size() 
+        this->pathCompletedLogged_ = false; // Reset the flag for new path
+        gzmsg << "New path loaded with " << this->targetPoses_.size() 
               << " waypoints" << std::endl;
-        gzmsg << "Starting from waypoint 0: [" << this->targetPose_.X() 
-              << ", " << this->targetPose_.Y() << "]" << std::endl;
-        gzmsg << "========================================" << std::endl;
       }
     }
     
@@ -233,28 +212,19 @@ void GazeboRosActorCommand::PreUpdate(
     gz::math::Vector2d pos = targetPos2d - currentPos2d;
     double distance = pos.Length();
     
-    // Log path progress less frequently (every 100 frames or when waypoint changes)
-    static int logCounter = 0;
-    if (logCounter++ % 100 == 0) {
-      gzmsg << "Path mode: Distance to waypoint " << this->idx_ << ": " 
-            << distance << "m" << std::endl;
-    }
-    
     // Check if actor has reached current target position
     if (distance < this->linTolerance_) {
-      gzmsg << "Reached waypoint " << this->idx_ << "!" << std::endl;
-      
       // If there are more targets, choose new target
       if (this->idx_ < static_cast<int>(this->targetPoses_.size()) - 1) {
         this->ChooseNewTarget();
-        gzmsg << "Moving to next waypoint " << this->idx_ << ": [" 
-              << this->targetPose_.X() << ", " << this->targetPose_.Y() << "]" << std::endl;
         pos.X() = this->targetPose_.X() - currentPose.Pos().X();
         pos.Y() = this->targetPose_.Y() - currentPose.Pos().Y();
       } else {
         // All targets have been accomplished, stop moving
-        gzmsg << "PATH COMPLETED! All " << this->targetPoses_.size() 
-              << " waypoints reached." << std::endl;
+        if (!this->pathCompletedLogged_) {
+          gzmsg << "Path completed - all waypoints reached" << std::endl;
+          this->pathCompletedLogged_ = true;
+        }
         pos.X() = 0;
         pos.Y() = 0;
       }
@@ -268,10 +238,6 @@ void GazeboRosActorCommand::PreUpdate(
     // Calculate target yaw to face the waypoint
     // For path mode, we directly set the orientation without offset
     double targetYaw = std::atan2(pos.Y(), pos.X());
-    
-    // Debug logging
-    gzmsg << "Direction vector: [" << pos.X() << ", " << pos.Y() << "]" << std::endl;
-    gzmsg << "Target yaw (rad): " << targetYaw << " (" << (targetYaw * 180.0 / M_PI) << " deg)" << std::endl;
     
     // Always set orientation to face the direction of movement
     newPose.Rot() = gz::math::Quaterniond(0, 0, targetYaw);
@@ -293,9 +259,6 @@ void GazeboRosActorCommand::PreUpdate(
       
       this->targetVel_.Pos().X() = vel.X();
       this->targetVel_.Rot() = gz::math::Quaterniond(0, 0, vel.Z());
-      
-      gzmsg << "Applied velocity: linear=" << vel.X() 
-            << ", angular=" << vel.Z() << std::endl;
     }
     
     // Apply velocity (only if non-zero)

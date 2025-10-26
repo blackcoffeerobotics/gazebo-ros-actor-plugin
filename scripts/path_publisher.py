@@ -13,12 +13,17 @@ class PathPublisher(Node):
         # Create the publisher with topic "/cmd_path" and message type "Path"
         self.publisher = self.create_publisher(Path, '/cmd_path', 10)
         
-        # Create a timer to publish periodically (every 2 seconds)
-        self.timer = self.create_timer(2.0, self.publish_path)
+        # Create a timer to publish once after a short delay (to ensure subscriber is ready)
+        self.timer = self.create_timer(1.0, self.publish_path)
+        self.published = False
         
         self.get_logger().info('Path publisher node started')
         
     def publish_path(self):
+        # Only publish once
+        if self.published:
+            return
+        
         # Create the Path message
         path_msg = Path()
         
@@ -55,6 +60,18 @@ class PathPublisher(Node):
         # Publish the Path message to the "/cmd_path" topic
         self.publisher.publish(path_msg)
         self.get_logger().info(f'Published path with {num_waypoints} waypoints')
+        
+        # Mark as published and cancel the timer
+        self.published = True
+        self.timer.cancel()
+        
+        # Schedule shutdown
+        self.get_logger().info('Path published successfully. Shutting down...')
+        self.create_timer(0.5, self.shutdown_node)
+    
+    def shutdown_node(self):
+        """Shutdown the node cleanly"""
+        raise KeyboardInterrupt
     
     def euler_to_quaternion(self, roll, pitch, yaw):
         """

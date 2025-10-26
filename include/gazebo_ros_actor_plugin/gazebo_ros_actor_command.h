@@ -135,6 +135,9 @@ class GazeboRosActorCommand :
 
   /// \brief Mutex for thread safety
   std::mutex mutex_;
+
+  /// \brief Flag to track if path completion has been logged
+  bool pathCompletedLogged_;
 };
 
 } // namespace gazebo_ros_actor_plugin
