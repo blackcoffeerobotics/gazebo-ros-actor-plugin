@@ -9,21 +9,21 @@
 #include <thread>
 #include <mutex>
 
-#include <gz/sim/System.hh>
-#include <gz/sim/Entity.hh>
-#include <gz/sim/EntityComponentManager.hh>
-#include <gz/sim/EventManager.hh>
-#include <gz/sim/Actor.hh>
-#include <gz/sim/components/Actor.hh>
-#include <gz/sim/components/Name.hh>
-#include <gz/sim/components/Pose.hh>
-#include <gz/sim/Util.hh>
-#include <gz/math/Pose3.hh>
-#include <gz/math/Vector3.hh>
-#include <gz/math/Quaternion.hh>
-#include <gz/transport/Node.hh>
-#include <gz/msgs/twist.pb.h>
-#include <gz/msgs/pose_v.pb.h>
+#include <ignition/gazebo/System.hh>
+#include <ignition/gazebo/Entity.hh>
+#include <ignition/gazebo/EntityComponentManager.hh>
+#include <ignition/gazebo/EventManager.hh>
+#include <ignition/gazebo/Actor.hh>
+#include <ignition/gazebo/components/Actor.hh>
+#include <ignition/gazebo/components/Name.hh>
+#include <ignition/gazebo/components/Pose.hh>
+#include <ignition/gazebo/Util.hh>
+#include <ignition/math/Pose3.hh>
+#include <ignition/math/Vector3.hh>
+#include <ignition/math/Quaternion.hh>
+#include <ignition/transport/Node.hh>
+#include <ignition/msgs/twist.pb.h>
+#include <ignition/msgs/pose_v.pb.h>
 
 #include <sdf/Element.hh>
 
@@ -33,10 +33,10 @@ namespace gazebo_ros_actor_plugin {
 /// a path or velocity published by other ROS2 node.
 
 class GazeboRosActorCommand :
-    public gz::sim::System,
-    public gz::sim::ISystemConfigure,
-    public gz::sim::ISystemPreUpdate,
-    public gz::sim::ISystemPostUpdate {
+    public ignition::gazebo::System,
+    public ignition::gazebo::ISystemConfigure,
+    public ignition::gazebo::ISystemPreUpdate,
+    public ignition::gazebo::ISystemPostUpdate {
  public:
   /// \brief Constructor
   GazeboRosActorCommand();
@@ -49,37 +49,37 @@ class GazeboRosActorCommand :
   /// \param[in] _sdf The SDF Element associated with this system plugin
   /// \param[in] _ecm The EntityComponentManager of the given simulation instance
   /// \param[in] _eventMgr The EventManager of the given simulation instance
-  void Configure(const gz::sim::Entity &_entity,
+  void Configure(const ignition::gazebo::Entity &_entity,
                  const std::shared_ptr<const sdf::Element> &_sdf,
-                 gz::sim::EntityComponentManager &_ecm,
-                 gz::sim::EventManager &_eventMgr) override;
+                 ignition::gazebo::EntityComponentManager &_ecm,
+                 ignition::gazebo::EventManager &_eventMgr) override;
 
   /// \brief Called each simulation iteration
   /// \param[in] _info Simulation update info
   /// \param[in] _ecm Mutable reference to the EntityComponentManager
-  void PreUpdate(const gz::sim::UpdateInfo &_info,
-                 gz::sim::EntityComponentManager &_ecm) override;
+  void PreUpdate(const ignition::gazebo::UpdateInfo &_info,
+                 ignition::gazebo::EntityComponentManager &_ecm) override;
 
   /// \brief Called after physics update
   /// \param[in] _info Simulation update info
   /// \param[in] _ecm Const reference to the EntityComponentManager
-  void PostUpdate(const gz::sim::UpdateInfo &_info,
-                  const gz::sim::EntityComponentManager &_ecm) override;
+  void PostUpdate(const ignition::gazebo::UpdateInfo &_info,
+                  const ignition::gazebo::EntityComponentManager &_ecm) override;
 
  private:
   /// \brief Callback function for receiving velocity commands from a publisher.
   /// \param[in] msg Pointer to the incoming velocity message.
-  void VelCallback(const gz::msgs::Twist &msg);
+  void VelCallback(const ignition::msgs::Twist &msg);
 
   /// \brief Callback function for receiving path commands from a publisher.
   /// \param[in] msg Pointer to the incoming path message (Pose_V = vector of poses).
-  void PathCallback(const gz::msgs::Pose_V &msg);
+  void PathCallback(const ignition::msgs::Pose_V &msg);
 
   /// \brief Helper function to choose a new target pose
   void ChooseNewTarget();
 
-  /// \brief GZ transport node
-  gz::transport::Node node_;
+  /// \brief IGN transport node
+  ignition::transport::Node node_;
 
   /// \brief Topic name for velocity commands
   std::string velTopic_;
@@ -88,7 +88,7 @@ class GazeboRosActorCommand :
   std::string pathTopic_;
 
   /// \brief Entity ID of the actor
-  gz::sim::Entity actorEntity_;
+  ignition::gazebo::Entity actorEntity_;
 
   /// \brief Multiplier to base animation speed to adjust
   /// the speed of actor's animation and foot swinging
@@ -101,7 +101,7 @@ class GazeboRosActorCommand :
   std::string followMode_;
 
   /// \brief Target walking velocity for the actor
-  gz::math::Pose3d targetVel_;
+  ignition::math::Pose3d targetVel_;
 
   /// \brief Speed at which actor moves along path during path-following
   double linVelocity_;
@@ -110,10 +110,10 @@ class GazeboRosActorCommand :
   double angVelocity_;
 
   /// \brief Current target pose
-  gz::math::Vector3d targetPose_;
+  ignition::math::Vector3d targetPose_;
 
   /// \brief List of target poses
-  std::vector<gz::math::Vector3d> targetPoses_;
+  std::vector<ignition::math::Vector3d> targetPoses_;
 
   /// \brief Index of current target pose
   int idx_;
@@ -128,10 +128,10 @@ class GazeboRosActorCommand :
   double defaultRotation_;
 
   /// \brief Data structure for saving velocity command
-  std::queue<gz::math::Vector3d> cmdQueue_;
+  std::queue<ignition::math::Vector3d> cmdQueue_;
 
   /// \brief Data structure for saving path poses
-  std::queue<std::vector<gz::math::Vector3d>> pathQueue_;
+  std::queue<std::vector<ignition::math::Vector3d>> pathQueue_;
 
   /// \brief Mutex for thread safety
   std::mutex mutex_;

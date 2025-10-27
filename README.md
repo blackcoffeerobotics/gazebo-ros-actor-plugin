@@ -1,33 +1,34 @@
-# Gazebo ROS2 Actor Plugin (Harmonic)
+# Gazebo ROS2 Actor Plugin (Fortress)
 
 ## About
 
-The `gazebo_ros_actor_plugin` package contains a plugin for **Gazebo Harmonic** and **ROS2** that enables dynamic control of actors in simulation. The plugin allows you to control actors using either position or velocity commands.
+The `gazebo_ros_actor_plugin` package contains a plugin for **Gazebo Fortress** and **ROS2 Humble** that enables dynamic control of actors in simulation. The plugin allows you to control actors using either position or velocity commands.
 
-**Migration Note:** This package has been migrated from ROS1 Noetic + Gazebo Classic 11 to ROS2 Jazzy + Gazebo Harmonic. See `MIGRATION.md` for details.
+**Migration Note:** This package has been migrated from ROS1 Noetic + Gazebo Classic 11 → ROS2 Jazzy + Gazebo Harmonic → ROS2 Humble + Gazebo Fortress. See `MIGRATION.md` and `HUMBLE_FORTRESS_MIGRATION_PLAN.md` for details.
 
 ## System Requirements
 
 Before using this package, make sure that you meet the following requirements:
 
-- **ROS 2 Jazzy** (or later)
-- **Gazebo Harmonic** (gz-sim8)
+- **ROS 2 Humble** 
+- **Gazebo Fortress** (gz-sim6)
 - **ros_gz** packages (`ros_gz_sim`, `ros_gz_bridge`)
+- **Ubuntu 22.04** (recommended)
 
 ## Installation
 
 ### Prerequisites
 
 ```bash
-# Install ROS2 Jazzy (Ubuntu 24.04)
-# Follow official instructions at: https://docs.ros.org/en/jazzy/Installation.html
+# Install ROS2 Humble (Ubuntu 22.04)
+# Follow official instructions at: https://docs.ros.org/en/humble/Installation.html
 
-# Install Gazebo Harmonic
+# Install Gazebo Fortress
 sudo apt-get update
-sudo apt-get install gz-harmonic
+sudo apt-get install gz-fortress
 
 # Install ROS-Gazebo bridge packages
-sudo apt-get install ros-jazzy-ros-gz ros-jazzy-ros-gz-bridge ros-jazzy-ros-gz-sim
+sudo apt-get install ros-humble-ros-gz ros-humble-ros-gz-bridge ros-humble-ros-gz-sim
 ```
 
 ### Build from Source
@@ -57,7 +58,7 @@ If you prefer using Docker:
 
 ```bash
 # Build the Docker image
-docker build -t bcr_ros2-jazzy_gz-harmonic:latest .
+docker build -t bcr_ros2-humble_gz-fortress:latest .
 
 # Launch the container
 cd docker_scripts
@@ -103,7 +104,7 @@ source install/setup.bash
 
 ```bash
 # Install teleop keyboard
-sudo apt-get install ros-jazzy-teleop-twist-keyboard
+sudo apt-get install ros-humble-teleop-twist-keyboard
 
 # Run teleop
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
@@ -144,9 +145,10 @@ Publishes a circular path with 10 waypoints.
 
 ## Resources
 
-- [Migration Guide](MIGRATION.md)
-- [Gazebo Harmonic Docs](https://gazebosim.org/docs/harmonic)
-- [ROS2 Jazzy Docs](https://docs.ros.org/en/jazzy/)
+- [Migration Guide - Classic to Harmonic](MIGRATION.md)
+- [Migration Guide - Harmonic to Fortress](HUMBLE_FORTRESS_MIGRATION_PLAN.md)
+- [Gazebo Fortress Docs](https://gazebosim.org/docs/fortress)
+- [ROS2 Humble Docs](https://docs.ros.org/en/humble/)
 - [Demo Videos](https://youtube.com/playlist?list=PL_jbb--NzdcAPhl06Fey7m6UO2aNw8a8d)
 
 ## License

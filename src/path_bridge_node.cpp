@@ -3,8 +3,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <gz/transport/Node.hh>
-#include <gz/msgs/pose_v.pb.h>
+#include <ignition/transport/Node.hh>
+#include <ignition/msgs/pose_v.pb.h>
 
 namespace gazebo_ros_actor_plugin
 {
@@ -31,7 +31,7 @@ public:
     );
     
     // Create Gazebo publisher
-    gz_pub_ = gz_node_.Advertise<gz::msgs::Pose_V>(gz_path_topic);
+    gz_pub_ = gz_node_.Advertise<ignition::msgs::Pose_V>(gz_path_topic);
     
     if (!gz_pub_)
     {
@@ -57,7 +57,7 @@ private:
     RCLCPP_INFO(this->get_logger(), "Received ROS2 path with %zu waypoints", msg->poses.size());
     
     // Convert ROS2 Path to Gazebo Pose_V
-    gz::msgs::Pose_V gz_path;
+    ignition::msgs::Pose_V gz_path;
     
     for (const auto& pose_stamped : msg->poses)
     {
@@ -87,8 +87,8 @@ private:
   }
 
   rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
-  gz::transport::Node gz_node_;
-  gz::transport::Node::Publisher gz_pub_;
+  ignition::transport::Node gz_node_;
+  ignition::transport::Node::Publisher gz_pub_;
 };
 
 }  // namespace gazebo_ros_actor_plugin

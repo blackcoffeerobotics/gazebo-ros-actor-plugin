@@ -1,29 +1,29 @@
 #include <gazebo_ros_actor_plugin/gazebo_ros_actor_command.h>
 
-#include <gz/plugin/Register.hh>
-#include <gz/common/Profiler.hh>
-#include <gz/math/Angle.hh>
+#include <ignition/plugin/Register.hh>
+#include <ignition/common/Profiler.hh>
+#include <ignition/math/Angle.hh>
 
 #include <cmath>
 #include <functional>
 
 #define WALKING_ANIMATION "walking"
-// GZ_DTOR is already defined in gz/math/Angle.hh
+// IGN_DTOR is already defined in ignition/math/Angle.hh
 
 using namespace gazebo_ros_actor_plugin;
 
 /////////////////////////////////////////////////
 GazeboRosActorCommand::GazeboRosActorCommand()
-: actorEntity_(gz::sim::kNullEntity),
+: actorEntity_(ignition::gazebo::kNullEntity),
   animationFactor_(4.0),
   lastUpdate_(std::chrono::steady_clock::duration::zero()),
   followMode_("velocity"),
-  targetVel_(gz::math::Pose3d::Zero),
+  targetVel_(ignition::math::Pose3d::Zero),
   linVelocity_(1.0),
-  angVelocity_(GZ_DTOR(10)),
+  angVelocity_(IGN_DTOR(10)),
   idx_(0),
   linTolerance_(0.1),
-  angTolerance_(GZ_DTOR(5)),
+  angTolerance_(IGN_DTOR(5)),
   defaultRotation_(M_PI/2),
   pathCompletedLogged_(false) {
 }
@@ -35,23 +35,23 @@ GazeboRosActorCommand::~GazeboRosActorCommand() {
 
 /////////////////////////////////////////////////
 void GazeboRosActorCommand::Configure(
-    const gz::sim::Entity &_entity,
+    const ignition::gazebo::Entity &_entity,
     const std::shared_ptr<const sdf::Element> &_sdf,
-    gz::sim::EntityComponentManager &_ecm,
-    gz::sim::EventManager &/*_eventMgr*/) {
+    ignition::gazebo::EntityComponentManager &_ecm,
+    ignition::gazebo::EventManager &/*_eventMgr*/) {
   
   this->actorEntity_ = _entity;
   
   // Verify this is an actor
-  if (!_ecm.Component<gz::sim::components::Actor>(this->actorEntity_)) {
-    gzerr << "GazeboRosActorCommand plugin must be attached to an actor entity.\n";
+  if (!_ecm.Component<ignition::gazebo::components::Actor>(this->actorEntity_)) {
+    ignerr << "GazeboRosActorCommand plugin must be attached to an actor entity.\n";
     return;
   }
   
   // Get actor name for logging
-  auto nameComp = _ecm.Component<gz::sim::components::Name>(this->actorEntity_);
+  auto nameComp = _ecm.Component<ignition::gazebo::components::Name>(this->actorEntity_);
   std::string actorName = nameComp ? nameComp->Data() : "unknown";
-  gzmsg << "GazeboRosActorCommand attached to actor: " << actorName << std::endl;
+  ignmsg << "GazeboRosActorCommand attached to actor: " << actorName << std::endl;
   
   // Set default values for parameters
   this->followMode_ = "velocity";
@@ -59,8 +59,8 @@ void GazeboRosActorCommand::Configure(
   this->pathTopic_ = "/cmd_path";
   this->linTolerance_ = 0.1;
   this->linVelocity_ = 1.0;
-  this->angTolerance_ = GZ_DTOR(5);
-  this->angVelocity_ = GZ_DTOR(10);
+  this->angTolerance_ = IGN_DTOR(5);
+  this->angVelocity_ = IGN_DTOR(10);
   this->animationFactor_ = 4.0;
   this->defaultRotation_ = M_PI/2;
   
@@ -93,13 +93,13 @@ void GazeboRosActorCommand::Configure(
     this->defaultRotation_ = _sdf->Get<double>("default_rotation");
   }
   
-  // Subscribe to BOTH GZ topics (velocity and path) to allow dynamic mode switching
+  // Subscribe to BOTH IGN topics (velocity and path) to allow dynamic mode switching
   if (!this->node_.Subscribe(this->velTopic_, &GazeboRosActorCommand::VelCallback, this)) {
-    gzerr << "Failed to subscribe to velocity topic: " << this->velTopic_ << std::endl;
+    ignerr << "Failed to subscribe to velocity topic: " << this->velTopic_ << std::endl;
   }
   
   if (!this->node_.Subscribe(this->pathTopic_, &GazeboRosActorCommand::PathCallback, this)) {
-    gzerr << "Failed to subscribe to path topic: " << this->pathTopic_ << std::endl;
+    ignerr << "Failed to subscribe to path topic: " << this->pathTopic_ << std::endl;
   }
   
   // Don't initialize with a default waypoint - wait for actual path commands
@@ -113,20 +113,20 @@ void GazeboRosActorCommand::Configure(
 }
 
 /////////////////////////////////////////////////
-void GazeboRosActorCommand::VelCallback(const gz::msgs::Twist &msg) {
+void GazeboRosActorCommand::VelCallback(const ignition::msgs::Twist &msg) {
   std::lock_guard<std::mutex> lock(this->mutex_);
-  gz::math::Vector3d velCmd;
+  ignition::math::Vector3d velCmd;
   velCmd.X() = msg.linear().x();
   velCmd.Z() = msg.angular().z();
   this->cmdQueue_.push(velCmd);
 }
 
 /////////////////////////////////////////////////
-void GazeboRosActorCommand::PathCallback(const gz::msgs::Pose_V &msg) {
+void GazeboRosActorCommand::PathCallback(const ignition::msgs::Pose_V &msg) {
   std::lock_guard<std::mutex> lock(this->mutex_);
   
   // Extract poses from the Pose_V message
-  std::vector<gz::math::Vector3d> poses;
+  std::vector<ignition::math::Vector3d> poses;
   
   for (int i = 0; i < msg.pose_size(); ++i) {
     const auto& pose = msg.pose(i);
@@ -134,7 +134,7 @@ void GazeboRosActorCommand::PathCallback(const gz::msgs::Pose_V &msg) {
     double y = pose.position().y();
     
     // Convert quaternion to yaw angle
-    gz::math::Quaterniond quat(
+    ignition::math::Quaterniond quat(
       pose.orientation().w(),
       pose.orientation().x(),
       pose.orientation().y(),
@@ -142,30 +142,30 @@ void GazeboRosActorCommand::PathCallback(const gz::msgs::Pose_V &msg) {
     );
     double yaw = quat.Euler().Z();
     
-    poses.push_back(gz::math::Vector3d(x, y, yaw));
+    poses.push_back(ignition::math::Vector3d(x, y, yaw));
   }
   
   if (!poses.empty()) {
     this->pathQueue_.push(poses);
-    gzmsg << "New path received with " << poses.size() << " waypoints" << std::endl;
+    ignmsg << "New path received with " << poses.size() << " waypoints" << std::endl;
   } else {
-    gzwarn << "Received empty path" << std::endl;
+    ignwarn << "Received empty path" << std::endl;
   }
 }
 
 /////////////////////////////////////////////////
 void GazeboRosActorCommand::PreUpdate(
-    const gz::sim::UpdateInfo &_info,
-    gz::sim::EntityComponentManager &_ecm) {
+    const ignition::gazebo::UpdateInfo &_info,
+    ignition::gazebo::EntityComponentManager &_ecm) {
   
-  GZ_PROFILE("GazeboRosActorCommand::PreUpdate");
+  IGN_PROFILE("GazeboRosActorCommand::PreUpdate");
   
   // Initialize last update on first iteration and reset animation
   if (this->lastUpdate_ == std::chrono::steady_clock::duration::zero()) {
     this->lastUpdate_ = _info.simTime;
     
     // Reset animation time to zero on first update to stop auto-animation
-    gz::sim::Actor actor(this->actorEntity_);
+    ignition::gazebo::Actor actor(this->actorEntity_);
     actor.SetAnimationTime(_ecm, std::chrono::steady_clock::duration::zero());
     
     return;
@@ -175,10 +175,10 @@ void GazeboRosActorCommand::PreUpdate(
   std::chrono::duration<double> dt = _info.simTime - this->lastUpdate_;
   
   // Get current actor pose
-  auto currentPose = gz::sim::worldPose(this->actorEntity_, _ecm);
-  gz::math::Vector3d rpy = currentPose.Rot().Euler();
+  auto currentPose = ignition::gazebo::worldPose(this->actorEntity_, _ecm);
+  ignition::math::Vector3d rpy = currentPose.Rot().Euler();
   
-  gz::math::Pose3d newPose = currentPose;
+  ignition::math::Pose3d newPose = currentPose;
   double distanceTraveled = 0.0;
   
   if (this->followMode_ == "path") {
@@ -195,7 +195,7 @@ void GazeboRosActorCommand::PreUpdate(
       if (!this->targetPoses_.empty()) {
         this->targetPose_ = this->targetPoses_.at(this->idx_);
         this->pathCompletedLogged_ = false; // Reset the flag for new path
-        gzmsg << "New path loaded with " << this->targetPoses_.size() 
+        ignmsg << "New path loaded with " << this->targetPoses_.size() 
               << " waypoints" << std::endl;
       }
     }
@@ -207,9 +207,9 @@ void GazeboRosActorCommand::PreUpdate(
       return;
     }
     
-    gz::math::Vector2d targetPos2d(this->targetPose_.X(), this->targetPose_.Y());
-    gz::math::Vector2d currentPos2d(currentPose.Pos().X(), currentPose.Pos().Y());
-    gz::math::Vector2d pos = targetPos2d - currentPos2d;
+    ignition::math::Vector2d targetPos2d(this->targetPose_.X(), this->targetPose_.Y());
+    ignition::math::Vector2d currentPos2d(currentPose.Pos().X(), currentPose.Pos().Y());
+    ignition::math::Vector2d pos = targetPos2d - currentPos2d;
     double distance = pos.Length();
     
     // Check if actor has reached current target position
@@ -222,7 +222,7 @@ void GazeboRosActorCommand::PreUpdate(
       } else {
         // All targets have been accomplished, stop moving
         if (!this->pathCompletedLogged_) {
-          gzmsg << "Path completed - all waypoints reached" << std::endl;
+          ignmsg << "Path completed - all waypoints reached" << std::endl;
           this->pathCompletedLogged_ = true;
         }
         pos.X() = 0;
@@ -240,7 +240,7 @@ void GazeboRosActorCommand::PreUpdate(
     double targetYaw = std::atan2(pos.Y(), pos.X());
     
     // Always set orientation to face the direction of movement
-    newPose.Rot() = gz::math::Quaterniond(0, 0, targetYaw);
+    newPose.Rot() = ignition::math::Quaterniond(0, 0, targetYaw);
     
     // Move towards the target position
     if (pos.Length() != 0) {
@@ -254,11 +254,11 @@ void GazeboRosActorCommand::PreUpdate(
     
     // Get velocity command from queue
     if (!this->cmdQueue_.empty()) {
-      gz::math::Vector3d vel = this->cmdQueue_.front();
+      ignition::math::Vector3d vel = this->cmdQueue_.front();
       this->cmdQueue_.pop();
       
       this->targetVel_.Pos().X() = vel.X();
-      this->targetVel_.Rot() = gz::math::Quaterniond(0, 0, vel.Z());
+      this->targetVel_.Rot() = ignition::math::Quaterniond(0, 0, vel.Z());
     }
     
     // Apply velocity (only if non-zero)
@@ -275,29 +275,29 @@ void GazeboRosActorCommand::PreUpdate(
       
       double newYaw = rpy.Z() + this->targetVel_.Rot().Euler().Z() * dt.count();
       // Keep orientation upright - only set yaw, no roll/pitch
-      newPose.Rot() = gz::math::Quaterniond(0, 0, newYaw);
+      newPose.Rot() = ignition::math::Quaterniond(0, 0, newYaw);
       
       distanceTraveled = std::sqrt(dx * dx + dy * dy);
     } else {
-      this->targetVel_ = gz::math::Pose3d::Zero;
+      this->targetVel_ = ignition::math::Pose3d::Zero;
     }
   }
   
   // Update actor pose - actors need special handling
-  auto poseComp = _ecm.Component<gz::sim::components::Pose>(this->actorEntity_);
+  auto poseComp = _ecm.Component<ignition::gazebo::components::Pose>(this->actorEntity_);
   if (poseComp) {
-    _ecm.SetComponentData<gz::sim::components::Pose>(this->actorEntity_, newPose);
+    _ecm.SetComponentData<ignition::gazebo::components::Pose>(this->actorEntity_, newPose);
   } else {
-    _ecm.CreateComponent(this->actorEntity_, gz::sim::components::Pose(newPose));
+    _ecm.CreateComponent(this->actorEntity_, ignition::gazebo::components::Pose(newPose));
   }
   
   // Mark pose as changed so the rendering updates
-  _ecm.SetChanged(this->actorEntity_, gz::sim::components::Pose::typeId, gz::sim::ComponentState::OneTimeChange);
+  _ecm.SetChanged(this->actorEntity_, ignition::gazebo::components::Pose::typeId, ignition::gazebo::ComponentState::OneTimeChange);
   
   // Update animation time based on movement
   if (distanceTraveled > 0.0001) {
     // Actor is moving - advance animation
-    gz::sim::Actor actor(this->actorEntity_);
+    ignition::gazebo::Actor actor(this->actorEntity_);
     auto currentAnimTime = actor.AnimationTime(_ecm);
     if (currentAnimTime) {
       std::chrono::duration<double> animTimeDelta(distanceTraveled * this->animationFactor_);
@@ -312,8 +312,8 @@ void GazeboRosActorCommand::PreUpdate(
 
 /////////////////////////////////////////////////
 void GazeboRosActorCommand::PostUpdate(
-    const gz::sim::UpdateInfo &/*_info*/,
-    const gz::sim::EntityComponentManager &/*_ecm*/) {
+    const ignition::gazebo::UpdateInfo &/*_info*/,
+    const ignition::gazebo::EntityComponentManager &/*_ecm*/) {
   // Currently not used, but available for future extensions
   // Could be used for publishing actor state, etc.
 }
@@ -329,13 +329,13 @@ void GazeboRosActorCommand::ChooseNewTarget() {
 }
 
 // Register the plugin
-GZ_ADD_PLUGIN(
+IGNITION_ADD_PLUGIN(
     gazebo_ros_actor_plugin::GazeboRosActorCommand,
-    gz::sim::System,
+    ignition::gazebo::System,
     GazeboRosActorCommand::ISystemConfigure,
     GazeboRosActorCommand::ISystemPreUpdate,
     GazeboRosActorCommand::ISystemPostUpdate)
 
-GZ_ADD_PLUGIN_ALIAS(
+IGNITION_ADD_PLUGIN_ALIAS(
     gazebo_ros_actor_plugin::GazeboRosActorCommand,
     "gazebo_ros_actor_plugin::GazeboRosActorCommand")

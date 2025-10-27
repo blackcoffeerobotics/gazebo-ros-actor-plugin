@@ -46,7 +46,7 @@
     </light>    
 
     <actor name="actor1">
-      <pose>0 0 1.2138 0 0 0</pose>
+      <pose>0 0 0 0 0 0</pose>
       <skin>
         <!-- <filename>moonwalk.dae</filename> -->
         <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename>
@@ -67,7 +67,7 @@
       <!-- Updated plugin syntax for Gazebo Harmonic -->
       <plugin filename="libgazebo_ros_actor_plugin.so" 
               name="gazebo_ros_actor_plugin::GazeboRosActorCommand">
-        <follow_mode>path</follow_mode>  <!-- Options: "velocity" or "path" -->
+        <follow_mode>velocity</follow_mode>  <!-- Options: "velocity" or "path" -->
         <vel_topic>/cmd_vel</vel_topic>
         <path_topic>/cmd_path</path_topic>
         <animation_factor>4.0</animation_factor>

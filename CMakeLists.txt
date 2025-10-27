@@ -15,12 +15,12 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(gz-sim8 REQUIRED)
-find_package(gz-plugin2 REQUIRED)
-find_package(gz-common5 REQUIRED)
-find_package(gz-math7 REQUIRED)
-find_package(gz-transport13 REQUIRED)
-find_package(gz-msgs10 REQUIRED)
+find_package(ignition-gazebo6 REQUIRED)
+find_package(ignition-plugin1 REQUIRED)
+find_package(ignition-common4 REQUIRED)
+find_package(ignition-math6 REQUIRED)
+find_package(ignition-transport11 REQUIRED)
+find_package(ignition-msgs8 REQUIRED)
 
 # Add plugin library
 add_library(${PROJECT_NAME} SHARED
@@ -39,10 +39,10 @@ ament_target_dependencies(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-  gz-sim8::gz-sim8
-  gz-plugin2::gz-plugin2
-  gz-common5::gz-common5
-  gz-math7::gz-math7
+  ignition-gazebo6::ignition-gazebo6
+  ignition-plugin1::ignition-plugin1
+  ignition-common4::ignition-common4
+  ignition-math6::ignition-math6
 )
 
 # Add path bridge node executable
@@ -61,8 +61,8 @@ ament_target_dependencies(path_bridge_node
 )
 
 target_link_libraries(path_bridge_node
-  gz-transport13::gz-transport13
-  gz-msgs10::gz-msgs10
+  ignition-transport11::ignition-transport11
+  ignition-msgs8::ignition-msgs8
 )
 
 # Install library and executables

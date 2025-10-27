@@ -1,5 +1,5 @@
-# ROS 2 Jazzy
-FROM ros:jazzy
+# ROS 2 Humble
+FROM ros:humble
 
 # Prevent console from interacting with the user
 ARG DEBIAN_FRONTEND=noninteractive
@@ -43,4 +43,4 @@ RUN apt-get install --no-install-recommends -yqqq \
 RUN apt-get install --no-install-recommends -yqqq \
     ros-$ROS_DISTRO-teleop-twist-keyboard
 
-RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc
+RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
