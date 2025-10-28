@@ -2,44 +2,41 @@
 import math
 import rclpy
 from rclpy.node import Node
-from nav_msgs.msg import Path
-from geometry_msgs.msg import PoseStamped, Point, Quaternion
+from geometry_msgs.msg import PoseStamped, Point, Quaternion, PoseArray, Pose
 
 
-class PathPublisher(Node):
+class PoseArrayPublisher(Node):
     def __init__(self):
-        super().__init__('path_publisher_node')
+        super().__init__('pose_array_publisher_node')
         
-        # Create the publisher with topic "/cmd_path" and message type "Path"
-        self.publisher = self.create_publisher(Path, '/cmd_path', 10)
+        # Create the publisher with topic "/cmd_pose_array" and message type "PoseArray"
+        self.publisher = self.create_publisher(PoseArray, '/cmd_path', 10)
         
         # Create a timer to publish once after a short delay (to ensure subscriber is ready)
-        self.timer = self.create_timer(1.0, self.publish_path)
+        self.timer = self.create_timer(1.0, self.publish_pose_array)
         self.published = False
         
-        self.get_logger().info('Path publisher node started')
+        self.get_logger().info('PoseArray publisher node started')
         
-    def publish_path(self):
+    def publish_pose_array(self):
         # Only publish once
         if self.published:
             return
         
-        # Create the Path message
-        path_msg = Path()
+        # Create the PoseArray message
+        pose_array_msg = PoseArray()
         
-        # Set the header for the Path message
-        path_msg.header.stamp = self.get_clock().now().to_msg()
-        path_msg.header.frame_id = "map"
+        # Set the header for the PoseArray message
+        pose_array_msg.header.stamp = self.get_clock().now().to_msg()
+        pose_array_msg.header.frame_id = "map"
         
-        # Create the PoseStamped messages for each waypoint
+        # Create the Pose messages for each waypoint
         num_waypoints = 10  # Number of waypoints on the path
         for i in range(num_waypoints):
-            pose = PoseStamped()
-            pose.header.stamp = self.get_clock().now().to_msg()
-            pose.header.frame_id = "map"
+            pose = Pose()
             
             angle = i * (2 * math.pi / num_waypoints)
-            pose.pose.position = Point(
+            pose.position = Point(
                 x=2.0 * math.cos(angle), 
                 y=2.0 * math.sin(angle), 
                 z=0.0)
@@ -49,25 +46,25 @@ class PathPublisher(Node):
             
             # Convert to quaternion
             quat = self.euler_to_quaternion(0, 0, tangent_angle)
-            pose.pose.orientation = Quaternion(
+            pose.orientation = Quaternion(
                 x=quat[0],
                 y=quat[1],
                 z=quat[2],
                 w=quat[3])
             
-            path_msg.poses.append(pose)
+            pose_array_msg.poses.append(pose)
         
-        # Publish the Path message to the "/cmd_path" topic
-        self.publisher.publish(path_msg)
-        self.get_logger().info(f'Published path with {num_waypoints} waypoints')
+        # Publish the PoseArray message to the "/cmd_pose_array" topic
+        self.publisher.publish(pose_array_msg)
+        self.get_logger().info(f'Published PoseArray with {num_waypoints} poses')
         
         # Mark as published and cancel the timer
         self.published = True
         self.timer.cancel()
         
         # Schedule shutdown
-        self.get_logger().info('Path published successfully. Shutting down...')
-        self.create_timer(0.5, self.shutdown_node)
+        # self.get_logger().info('PoseArray published successfully. Shutting down...')
+        # self.create_timer(0.5, self.shutdown_node)
     
     def shutdown_node(self):
         """Shutdown the node cleanly"""
@@ -96,16 +93,15 @@ class PathPublisher(Node):
 def main(args=None):
     rclpy.init(args=args)
     
-    path_publisher = PathPublisher()
+    pose_array_publisher = PoseArrayPublisher()
     
     try:
-        rclpy.spin(path_publisher)
+        rclpy.spin(pose_array_publisher)
     except KeyboardInterrupt:
         pass
     finally:
-        path_publisher.destroy_node()
+        pose_array_publisher.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
