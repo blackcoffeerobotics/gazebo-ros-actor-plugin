@@ -4,7 +4,6 @@
 
 The `gazebo_ros_actor_plugin` package contains a plugin for **Gazebo Fortress** and **ROS2 Humble** that enables dynamic control of actors in simulation. The plugin allows you to control actors using either position or velocity commands.
 
-**Migration Note:** This package has been migrated from ROS1 Noetic + Gazebo Classic 11 → ROS2 Jazzy + Gazebo Harmonic → ROS2 Humble + Gazebo Fortress. See `MIGRATION.md` and `HUMBLE_FORTRESS_MIGRATION_PLAN.md` for details.
 
 ## System Requirements
 
@@ -23,11 +22,8 @@ Before using this package, make sure that you meet the following requirements:
 # Install ROS2 Humble (Ubuntu 22.04)
 # Follow official instructions at: https://docs.ros.org/en/humble/Installation.html
 
-# Install Gazebo Fortress
-sudo apt-get update
-sudo apt-get install gz-fortress
 
-# Install ROS-Gazebo bridge packages
+# Install Gazebo and ROS-Gazebo bridge packages
 sudo apt-get install ros-humble-ros-gz ros-humble-ros-gz-bridge ros-humble-ros-gz-sim
 ```
 
@@ -94,9 +90,9 @@ source install/setup.bash
    ```
 
    Launch arguments:
-   - `verbose:=true/false` - Enable verbose output (default: true)
-   - `headless:=true/false` - Run without GUI (default: false)
-   - `enable_bridge:=true/false` - Enable ROS-Gazebo bridge (default: true)
+   - `verbose:=True/False` - Enable verbose output (default: True)
+   - `headless:=True/False` - Run without GUI (default: False)
+
 
 ### Control Methods
 
@@ -141,21 +137,18 @@ Publishes a circular path with 10 waypoints.
 ### Subscribed Topics
 
 - `/cmd_vel` (`geometry_msgs/msg/Twist`) - Velocity commands
-- `/cmd_path` (`nav_msgs/msg/Path`) - Path waypoints
+- `/cmd_path` (`geometry_msgs/msg/PoseArray`) - Path waypoints
 
 ## Resources
 
-- [Migration Guide - Classic to Harmonic](MIGRATION.md)
-- [Migration Guide - Harmonic to Fortress](HUMBLE_FORTRESS_MIGRATION_PLAN.md)
-- [Gazebo Fortress Docs](https://gazebosim.org/docs/fortress)
-- [ROS2 Humble Docs](https://docs.ros.org/en/humble/)
+- [Gazebo Harmonic Actors Docs](https://gazebosim.org/docs/harmonic/actors/)
 - [Demo Videos](https://youtube.com/playlist?list=PL_jbb--NzdcAPhl06Fey7m6UO2aNw8a8d)
+- [Detailed Article](https://blackcoffeerobotics.com/blog/ros-plugin-to-control-actors-in-gazebo-simulation)
 
-## License
-
-Apache-2.0
 
 ## Authors
 
-- Animesh Singhal (animesh@blackcoffeerobotics.com)
+- Arthur Gomes(arthur@blackcoffeerobotics.com)
 - Gaurav Gupta (gaurav@blackcoffeerobotics.com)
+- Mathew P Hans (mathew@blackcoffeerobotics.com)
+
