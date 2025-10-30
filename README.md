@@ -2,7 +2,7 @@
 
 ## About
 
-The `gazebo_ros_actor_plugin` package contains a plugin for **Gazebo Harmonic** and **ROS2** that enables dynamic control of actors in simulation. The plugin allows you to control actors using either position or velocity commands.
+The `gazebo_ros_actor_plugin` package contains a plugin for **Gazebo Harmonic** and **ROS2 Jazzy** that enables dynamic control of actors in simulation. The plugin allows you to control actors using either pose array or velocity commands.
 
 
 ## System Requirements
@@ -33,7 +33,7 @@ mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws/src
 
 # Clone this repository
-git clone https://github.com/blackcoffeerobotics/gazebo-ros-actor-plugin.git
+git clone https://github.com/blackcoffeerobotics/gazebo-ros-actor-plugin.git -b jazzy-harmonic
 
 # Install dependencies
 cd ~/ros2_ws
