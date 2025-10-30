@@ -139,15 +139,21 @@ Publishes a circular path with 10 waypoints.
 
 ## Resources
 
-- [Migration Guide](MIGRATION.md)
-- [Gazebo Harmonic Docs](https://gazebosim.org/docs/harmonic)
-- [ROS2 Jazzy Docs](https://docs.ros.org/en/jazzy/)
+- [Gazebo Harmonic Actors Docs](https://gazebosim.org/docs/harmonic/actors/)
 - [Demo Videos](https://youtube.com/playlist?list=PL_jbb--NzdcAPhl06Fey7m6UO2aNw8a8d)
+- [Detailed Article](https://blackcoffeerobotics.com/blog/ros-plugin-to-control-actors-in-gazebo-simulation)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> updated readme
 
 ## Authors
 
 - Arthur Gomes(arthur@blackcoffeerobotics.com)
+<<<<<<< HEAD
 - Mathew P Hans (mathew@blackcoffeerobotics.com)
+=======
+>>>>>>> updated readme
 - Gaurav Gupta (gaurav@blackcoffeerobotics.com)
+- Mathew P Hans (mathew@blackcoffeerobotics.com)
