@@ -4,6 +4,7 @@
 
 The `gazebo_ros_actor_plugin` package contains a plugin for **Gazebo Fortress** and **ROS2 Humble** that enables dynamic control of actors in simulation. The plugin allows you to control actors using either pose array or velocity commands.
 
+The ROS2 port of this plugin has been generously sponsored by [Eric Schöneberg](https://github.com/Scoeerg)
 
 ## System Requirements
 
