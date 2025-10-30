@@ -4,7 +4,6 @@
 
 The `gazebo_ros_actor_plugin` package contains a plugin for **Gazebo Harmonic** and **ROS2** that enables dynamic control of actors in simulation. The plugin allows you to control actors using either position or velocity commands.
 
-**Migration Note:** This package has been migrated from ROS1 Noetic + Gazebo Classic 11 to ROS2 Jazzy + Gazebo Harmonic. See `MIGRATION.md` for details.
 
 ## System Requirements
 
@@ -22,11 +21,7 @@ Before using this package, make sure that you meet the following requirements:
 # Install ROS2 Jazzy (Ubuntu 24.04)
 # Follow official instructions at: https://docs.ros.org/en/jazzy/Installation.html
 
-# Install Gazebo Harmonic
-sudo apt-get update
-sudo apt-get install gz-harmonic
-
-# Install ROS-Gazebo bridge packages
+# Install Gazebo and Ros Gazebo bridge packages
 sudo apt-get install ros-jazzy-ros-gz ros-jazzy-ros-gz-bridge ros-jazzy-ros-gz-sim
 ```
 
@@ -95,7 +90,7 @@ source install/setup.bash
    Launch arguments:
    - `verbose:=true/false` - Enable verbose output (default: true)
    - `headless:=true/false` - Run without GUI (default: false)
-   - `enable_bridge:=true/false` - Enable ROS-Gazebo bridge (default: true)
+
 
 ### Control Methods
 
@@ -140,7 +135,7 @@ Publishes a circular path with 10 waypoints.
 ### Subscribed Topics
 
 - `/cmd_vel` (`geometry_msgs/msg/Twist`) - Velocity commands
-- `/cmd_path` (`nav_msgs/msg/Path`) - Path waypoints
+- `/cmd_path` (`geometry_msgs/msg/PoseArray`) - Path waypoints
 
 ## Resources
 
@@ -149,11 +144,10 @@ Publishes a circular path with 10 waypoints.
 - [ROS2 Jazzy Docs](https://docs.ros.org/en/jazzy/)
 - [Demo Videos](https://youtube.com/playlist?list=PL_jbb--NzdcAPhl06Fey7m6UO2aNw8a8d)
 
-## License
 
-Apache-2.0
 
 ## Authors
 
-- Animesh Singhal (animesh@blackcoffeerobotics.com)
+- Arthur Gomes(arthur@blackcoffeerobotics.com)
+- Mathew P Hans (mathew@blackcoffeerobotics.com)
 - Gaurav Gupta (gaurav@blackcoffeerobotics.com)

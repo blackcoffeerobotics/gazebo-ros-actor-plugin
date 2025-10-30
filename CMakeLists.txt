@@ -45,28 +45,8 @@ target_link_libraries(${PROJECT_NAME}
   gz-math7::gz-math7
 )
 
-# Add path bridge node executable
-add_executable(path_bridge_node
-  src/path_bridge_node.cpp
-)
-
-target_include_directories(path_bridge_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-
-ament_target_dependencies(path_bridge_node
-  rclcpp
-  nav_msgs
-)
-
-target_link_libraries(path_bridge_node
-  gz-transport13::gz-transport13
-  gz-msgs10::gz-msgs10
-)
-
 # Install library and executables
-install(TARGETS ${PROJECT_NAME} path_bridge_node
+install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -92,7 +72,6 @@ install(DIRECTORY
 # Install scripts
 install(PROGRAMS
   scripts/path_publisher.py
-  scripts/path_bridge.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

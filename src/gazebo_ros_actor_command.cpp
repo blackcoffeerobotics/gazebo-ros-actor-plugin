@@ -154,7 +154,6 @@ void GazeboRosActorCommand::VelCallback(const gz::msgs::Twist &msg) {
 
 void GazeboRosActorCommand::PathCallback(const gz::msgs::Pose_V &msg) {
   std::lock_guard<std::mutex> lock(this->mutex_);
-  
   std::vector<gz::math::Vector3d> poses;
   
   for (int i = 0; i < msg.pose_size(); ++i) {
