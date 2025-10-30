@@ -88,8 +88,8 @@ source install/setup.bash
    ```
 
    Launch arguments:
-   - `verbose:=true/false` - Enable verbose output (default: true)
-   - `headless:=true/false` - Run without GUI (default: false)
+   - `verbose:=True/False` - Enable verbose output (default: True)
+   - `headless:=True/False` - Run without GUI (default: False)
 
 
 ### Control Methods

@@ -63,12 +63,12 @@ class PoseArrayPublisher(Node):
         self.timer.cancel()
         
         # Schedule shutdown
-        # self.get_logger().info('PoseArray published successfully. Shutting down...')
-        # self.create_timer(0.5, self.shutdown_node)
+        self.get_logger().info('PoseArray published successfully. Shutting down...')
+        self.create_timer(0.1, self.destroy_and_exit)
     
-    def shutdown_node(self):
-        """Shutdown the node cleanly"""
-        raise KeyboardInterrupt
+    def destroy_and_exit(self):
+        self.destroy_node()
+        raise SystemExit
     
     def euler_to_quaternion(self, roll, pitch, yaw):
         """
@@ -95,13 +95,10 @@ def main(args=None):
     
     pose_array_publisher = PoseArrayPublisher()
     
-    try:
-        rclpy.spin(pose_array_publisher)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        pose_array_publisher.destroy_node()
-        rclpy.shutdown()
+    rclpy.spin(pose_array_publisher)
+    
+    pose_array_publisher.destroy_node()
+    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
