@@ -146,10 +146,3 @@ Publishes a circular path with 10 waypoints.
 - [Demo Videos](https://youtube.com/playlist?list=PL_jbb--NzdcAPhl06Fey7m6UO2aNw8a8d)
 - [Detailed Article](https://blackcoffeerobotics.com/blog/ros-plugin-to-control-actors-in-gazebo-simulation)
 
-
-## Authors
-
-- Arthur Gomes(arthur@blackcoffeerobotics.com)
-- Gaurav Gupta (gaurav@blackcoffeerobotics.com)
-- Mathew P Hans (mathew@blackcoffeerobotics.com)
-
