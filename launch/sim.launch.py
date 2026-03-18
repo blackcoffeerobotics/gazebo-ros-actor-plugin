@@ -9,8 +9,11 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     pkg_gazebo_ros_actor_plugin = get_package_share_directory('gazebo_ros_actor_plugin')
+    pkg_pablo_worlds = get_package_share_directory('pablo_worlds')
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
-    world_file = os.path.join(pkg_gazebo_ros_actor_plugin, 'config', 'worlds', 'move_actor.world')
+    #world_file = os.path.join(pkg_gazebo_ros_actor_plugin, 'config', 'worlds', 'move_actor.world')
+    world_file = os.path.join(pkg_pablo_worlds, 'worlds', 'street.world')
+    #world_file = os.path.join(pkg_pablo_worlds, 'worlds', 'city.world')
     model_path = os.path.join(pkg_gazebo_ros_actor_plugin, 'config', 'skins')
 
     # Declare launch arguments
@@ -42,18 +45,90 @@ def generate_launch_description():
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        name='ros_gz_bridge',
         arguments=[
-            '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
-            '/cmd_path@geometry_msgs/msg/PoseArray@gz.msgs.Pose_V'
+            '/cmd_vel1@geometry_msgs/msg/Twist@gz.msgs.Twist',
+            '/cmd_path1@geometry_msgs/msg/PoseArray@gz.msgs.Pose_V',
+
+            '/cmd_vel2@geometry_msgs/msg/Twist@gz.msgs.Twist',
+            '/cmd_path2@geometry_msgs/msg/PoseArray@gz.msgs.Pose_V',
+
+            '/cmd_vel3@geometry_msgs/msg/Twist@gz.msgs.Twist',
+            '/cmd_path3@geometry_msgs/msg/PoseArray@gz.msgs.Pose_V',
+
+           '/cmd_vel4@geometry_msgs/msg/Twist@gz.msgs.Twist',
+           '/cmd_path4@geometry_msgs/msg/PoseArray@gz.msgs.Pose_V'
+            
         ],
         output='screen'
     )
+
+
+    actor_file1 = os.path.join(pkg_gazebo_ros_actor_plugin,
+                              'config', 'skins', 'DoctorFemaleWalk', 'model1.sdf')
+
+    actor_file2 = os.path.join(pkg_gazebo_ros_actor_plugin,
+                                  'config', 'skins', 'DoctorFemaleWalk', 'model2.sdf')
+
+    actor_file3 = os.path.join(pkg_gazebo_ros_actor_plugin,
+                                  'config', 'skins', 'DoctorFemaleWalk', 'model3.sdf')
+    actor_file4 = os.path.join(pkg_gazebo_ros_actor_plugin,
+                                  'config', 'skins', 'DoctorFemaleWalk', 'model4.sdf')
+                                  
+    spawn_actor1 = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=[
+            '-file', actor_file1,
+            '-name', 'actor1',
+            '-x', '-3',
+            '-y', '-3',
+            
+        ],
+    )
+
+    spawn_actor2 = Node(
+        package='ros_gz_sim',
+        executable='create',
+        arguments=[
+            '-file', actor_file2,
+            '-name', 'actor2',
+            '-x', '3',
+            '-y', '-3'
+        ],
+    )
+
+    spawn_actor3 = Node(
+            package='ros_gz_sim',
+            executable='create',
+            arguments=[
+                '-file', actor_file3,
+                '-name', 'actor3',
+                '-x', '-3',
+                '-y', '3'
+            ],
+        )
+
+    spawn_actor4 = Node(
+            package='ros_gz_sim',
+            executable='create',
+            arguments=[
+                '-file', actor_file4,
+                '-name', 'actor4',
+                '-x', '1.5',
+                '-y', '1.5'
+            ],
+        )
+
+
 
     return LaunchDescription([
         verbose_arg,
         headless_arg,
         gz_resource_path,
         gz_sim,
-        ros_gz_bridge
+        ros_gz_bridge,
+        spawn_actor1,
+        spawn_actor2,
+        spawn_actor3,
+        spawn_actor4
     ])

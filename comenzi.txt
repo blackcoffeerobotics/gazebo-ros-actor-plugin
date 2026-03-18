@@ -1,0 +1,18 @@
+ign gazebo ~/ros2_ws/src/gazebo-ros-actor-plugin/config/worlds/move_actor.world
+
+#merge
+ign gazebo ~/ros2_ws/src/gazebo-ros-actor-plugin/config/worlds/move_actor.world
+
+
+
+
+#Terminal1
+cd ~/ros2_ws
+source ~/ros2_ws/install/setup.bash
+ros2 run gazebo_ros_actor_plugin path_publisher.py
+
+#Terminal2
+source ~/ros2_ws/install/setup.bash
+ros2 launch gazebo_ros_actor_plugin sim.launch.py
+
+

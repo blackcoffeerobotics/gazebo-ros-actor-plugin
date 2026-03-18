@@ -14,6 +14,7 @@ GazeboRosActorCommand::GazeboRosActorCommand()
     linTolerance_(0.1),
     angTolerance_(IGN_DTOR(5)),
     defaultRotation_(M_PI/2),
+    streetHeight_(0.5),   // <-- add this
     pathCompletedLogged_(false) {
 }
 
@@ -58,9 +59,6 @@ void GazeboRosActorCommand::Configure(
   }
   if (_sdf->HasElement("default_rotation")) {
     this->defaultRotation_ = _sdf->Get<double>("default_rotation");
-  }
-  if (_sdf->HasElement("street_height")) {
-  this->streetHeight_ = _sdf->Get<double>("street_height");
   }
 
   std::string animationName;
@@ -132,8 +130,7 @@ void GazeboRosActorCommand::Configure(
   if (nullptr == trajPoseComp)
   {
     // Leave Z to the pose component, control only 2D with Trajectory
-    //initialPose.Pos().Z(0);
-    initialPose.Pos().Z(this->streetHeight_);
+    initialPose.Pos().Z(0);
     _ecm.CreateComponent(_entity, gz::sim::components::TrajectoryPose(initialPose));
   }
 
@@ -290,56 +287,7 @@ void GazeboRosActorCommand::PreUpdate(
     }
   }
 
-
-
-
-
-
-  // force actor to stay on street height
-//newPose.Pos().Z(0.5);   // change 0.15 to your street height
-newPose.Pos().Z(this->streetHeight_);
-// update actor trajectory
-*trajPoseComp = gz::sim::components::TrajectoryPose(newPose);
-
-// also update the real pose
-
-/*
-auto poseComp = _ecm.Component<gz::sim::components::Pose>(this->actorEntity_);
-if (poseComp)
-{
-    *poseComp = gz::sim::components::Pose(newPose);
-}
-*/
-
-
-
-
-
-
-auto poseComp = _ecm.Component<gz::sim::components::Pose>(this->actorEntity_);
-if (poseComp)
-{
-    auto pose = poseComp->Data();
-
-    // Only correct the height
-    pose.Pos().Z(this->streetHeight_);
-
-    *poseComp = gz::sim::components::Pose(pose);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-  //newPose.Pos().Z(this->streetHeight_);
-  //*trajPoseComp = gz::sim::components::TrajectoryPose(newPose);
+  *trajPoseComp = gz::sim::components::TrajectoryPose(newPose);
 
   _ecm.SetChanged(
     this->actorEntity_,
@@ -348,12 +296,6 @@ if (poseComp)
 
   // Update actor bone trajectories based on animation time
   auto animTimeComp = _ecm.Component<gz::sim::components::AnimationTime>(this->actorEntity_);
-
-
-
-
-
-
 
   if (distanceTraveled > 0.0001) {
     auto animTime = animTimeComp->Data() +

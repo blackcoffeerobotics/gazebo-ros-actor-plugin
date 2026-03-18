@@ -1,0 +1,53 @@
+<sdf version="1.6">
+  <actor name="walker_slow_red">
+
+    <pose>-2 0 1.37 0 0 0</pose>
+
+    <skin>
+      <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename>
+      <scale>1.0</scale>
+    </skin>
+
+    <animation name="walk">
+      <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename>
+      <scale>1.0</scale>
+      <interpolate_x>true</interpolate_x>
+    </animation>
+
+
+
+    <link name="collision_body">
+      <collision name="collision">
+       <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.3</radius>
+            <length>1.7</length>
+          </cylinder>
+        </geometry>
+      </collision>
+    </link>
+
+   
+
+    <plugin filename="libgazebo_ros_actor_plugin.so"
+            name="gazebo_ros_actor_plugin::GazeboRosActorCommand">
+
+      <follow_mode>path</follow_mode>
+      <vel_topic>/cmd_vel3</vel_topic>
+      <path_topic>/cmd_path3</path_topic>
+
+      <animation_factor>4.0</animation_factor>
+
+      <linear_tolerance>0.1</linear_tolerance>
+      <linear_velocity>1</linear_velocity>
+
+      <angular_tolerance>0.0872</angular_tolerance>
+      <angular_velocity>2.5</angular_velocity>
+
+      <default_rotation>1.57</default_rotation>
+
+    </plugin>
+
+  </actor>
+</sdf>
