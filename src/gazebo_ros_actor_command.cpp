@@ -294,10 +294,10 @@ void GazeboRosActorCommand::PreUpdate(
 
 
 
-
+//streetHeight_ = 0.3;
   // force actor to stay on street height
-//newPose.Pos().Z(0.5);   // change 0.15 to your street height
-newPose.Pos().Z(this->streetHeight_);
+newPose.Pos().Z(0.0);   // change 0.15 to your street height
+//newPose.Pos().Z(this->streetHeight_);
 // update actor trajectory
 *trajPoseComp = gz::sim::components::TrajectoryPose(newPose);
 
@@ -314,8 +314,15 @@ if (poseComp)
 
 
 
+auto poseComp = _ecm.Component<gz::sim::components::Pose>(this->actorEntity_);
+if (poseComp)
+{
+    *poseComp = gz::sim::components::Pose(newPose);
+}
 
 
+
+/*
 auto poseComp = _ecm.Component<gz::sim::components::Pose>(this->actorEntity_);
 if (poseComp)
 {
@@ -328,8 +335,7 @@ if (poseComp)
 }
 
 
-
-
+*/
 
 
 

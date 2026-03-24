@@ -1,7 +1,7 @@
 <sdf version="1.6">
   <actor name="walker_slow_red">
 
-    <pose>-2 0 1.37 0 0 0</pose>
+    <pose>-2 0 0.4 0 0 0</pose>
 
     <skin>
       <filename>model://DoctorFemaleWalk/meshes/DoctorFemaleWalk.dae</filename>

@@ -82,7 +82,6 @@ def generate_launch_description():
             '-name', 'actor1',
             '-x', '-3',
             '-y', '-3',
-            '-z', '0.3'
             
         ],
     )
@@ -94,8 +93,7 @@ def generate_launch_description():
             '-file', actor_file2,
             '-name', 'actor2',
             '-x', '3',
-            '-y', '-3',
-            '-z', '0.3'
+            '-y', '-3'
         ],
     )
 
@@ -106,8 +104,7 @@ def generate_launch_description():
                 '-file', actor_file3,
                 '-name', 'actor3',
                 '-x', '-3',
-                '-y', '3',
-                '-z', '0.3'
+                '-y', '3'
             ],
         )
 
@@ -118,8 +115,7 @@ def generate_launch_description():
                 '-file', actor_file4,
                 '-name', 'actor4',
                 '-x', '1.5',
-                '-y', '1.5',
-                '-z', '0.3'
+                '-y', '1.5'
             ],
         )
 
