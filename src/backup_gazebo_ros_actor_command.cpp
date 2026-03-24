@@ -59,9 +59,6 @@ void GazeboRosActorCommand::Configure(
   if (_sdf->HasElement("default_rotation")) {
     this->defaultRotation_ = _sdf->Get<double>("default_rotation");
   }
-  if (_sdf->HasElement("street_height")) {
-  this->streetHeight_ = _sdf->Get<double>("street_height");
-  }
 
   std::string animationName;
 
@@ -132,8 +129,7 @@ void GazeboRosActorCommand::Configure(
   if (nullptr == trajPoseComp)
   {
     // Leave Z to the pose component, control only 2D with Trajectory
-    //initialPose.Pos().Z(0);
-    initialPose.Pos().Z(this->streetHeight_);
+    initialPose.Pos().Z(0);
     _ecm.CreateComponent(_entity, gz::sim::components::TrajectoryPose(initialPose));
   }
 
@@ -230,20 +226,18 @@ void GazeboRosActorCommand::PreUpdate(
     double distance = pos.Length();
 
     if (distance < this->linTolerance_) {
-
-        // move to next waypoint
-      this->idx_++;
-
-      // restart path when reaching the end
-      if (this->idx_ >= static_cast<int>(this->targetPoses_.size()))
-      {
-          this->idx_ = 0;
+      if (this->idx_ < static_cast<int>(this->targetPoses_.size()) - 1) {
+        this->ChooseNewTarget();
+        pos.X() = this->targetPose_.X() - currentPose.Pos().X();
+        pos.Y() = this->targetPose_.Y() - currentPose.Pos().Y();
+      } else {
+        if (!this->pathCompletedLogged_) {
+          ignmsg << "Path completed - all waypoints reached" << std::endl;
+          this->pathCompletedLogged_ = true;
+        }
+        pos.X() = 0;
+        pos.Y() = 0;
       }
-
-      this->targetPose_ = this->targetPoses_.at(this->idx_);
-
-      pos.X() = this->targetPose_.X() - currentPose.Pos().X();
-      pos.Y() = this->targetPose_.Y() - currentPose.Pos().Y();
     }
 
     if (pos.Length() != 0) {
@@ -290,62 +284,7 @@ void GazeboRosActorCommand::PreUpdate(
     }
   }
 
-
-
-
-
-//streetHeight_ = 0.3;
-  // force actor to stay on street height
-newPose.Pos().Z(0.0);   // change 0.15 to your street height
-//newPose.Pos().Z(this->streetHeight_);
-// update actor trajectory
-*trajPoseComp = gz::sim::components::TrajectoryPose(newPose);
-
-// also update the real pose
-
-/*
-auto poseComp = _ecm.Component<gz::sim::components::Pose>(this->actorEntity_);
-if (poseComp)
-{
-    *poseComp = gz::sim::components::Pose(newPose);
-}
-*/
-
-
-
-
-auto poseComp = _ecm.Component<gz::sim::components::Pose>(this->actorEntity_);
-if (poseComp)
-{
-    *poseComp = gz::sim::components::Pose(newPose);
-}
-
-
-
-/*
-auto poseComp = _ecm.Component<gz::sim::components::Pose>(this->actorEntity_);
-if (poseComp)
-{
-    auto pose = poseComp->Data();
-
-    // Only correct the height
-    pose.Pos().Z(this->streetHeight_);
-
-    *poseComp = gz::sim::components::Pose(pose);
-}
-
-
-*/
-
-
-
-
-
-
-
-
-  //newPose.Pos().Z(this->streetHeight_);
-  //*trajPoseComp = gz::sim::components::TrajectoryPose(newPose);
+  *trajPoseComp = gz::sim::components::TrajectoryPose(newPose);
 
   _ecm.SetChanged(
     this->actorEntity_,
@@ -354,12 +293,6 @@ if (poseComp)
 
   // Update actor bone trajectories based on animation time
   auto animTimeComp = _ecm.Component<gz::sim::components::AnimationTime>(this->actorEntity_);
-
-
-
-
-
-
 
   if (distanceTraveled > 0.0001) {
     auto animTime = animTimeComp->Data() +

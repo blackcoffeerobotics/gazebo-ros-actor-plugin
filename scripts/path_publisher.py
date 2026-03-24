@@ -10,8 +10,11 @@ class PoseArrayPublisher(Node):
         super().__init__('pose_array_publisher_node')
         
         # Create the publisher with topic "/cmd_pose_array" and message type "PoseArray"
-        self.publisher = self.create_publisher(PoseArray, '/cmd_path', 10)
-        
+        self.publisher1 = self.create_publisher(PoseArray, '/cmd_path1', 10)
+        self.publisher2 = self.create_publisher(PoseArray, '/cmd_path2', 10)
+        self.publisher3 = self.create_publisher(PoseArray, '/cmd_path3', 10)
+        self.publisher4 = self.create_publisher(PoseArray, '/cmd_path4', 10)
+
         # Create a timer to publish once after a short delay (to ensure subscriber is ready)
         self.timer = self.create_timer(1.0, self.publish_pose_array)
         self.published = False
@@ -19,6 +22,136 @@ class PoseArrayPublisher(Node):
         self.get_logger().info('PoseArray publisher node started')
         
     def publish_pose_array(self):
+
+        #pedestrian1
+        # pedestrian1
+        pose_array_msg1 = PoseArray()
+        pose_array_msg1.header.stamp = self.get_clock().now().to_msg()
+        pose_array_msg1.header.frame_id = "map"
+
+        # waypoint 1
+        pose1 = Pose()
+        pose1.position = Point(x=0.0, y=-3.0, z=0.0)
+        pose1.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg1.poses.append(pose1)
+
+        # waypoint 2
+        pose1 = Pose()
+        pose1.position = Point(x=0.0, y=-2.0, z=0.0)
+        pose1.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg1.poses.append(pose1)
+
+        # waypoint 3
+        pose1 = Pose()
+        pose1.position = Point(x=-3.0, y=-2.0, z=0.0)
+        pose1.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg1.poses.append(pose1)
+
+        # waypoint 4
+        pose1 = Pose()
+        pose1.position = Point(x=-3.0, y=-3.0, z=0.0)
+        pose1.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg1.poses.append(pose1)
+
+
+
+
+
+        #pedestrian2
+        pose_array_msg2 = PoseArray()
+        pose_array_msg2.header.stamp = self.get_clock().now().to_msg()
+        pose_array_msg2.header.frame_id = "map"
+
+        # waypoint 1
+        pose2 = Pose()
+        pose2.position = Point(x=-3.0, y=0.0, z=0.0)
+        pose2.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg2.poses.append(pose2)
+
+        # waypoint 2
+        pose2 = Pose()
+        pose2.position = Point(x=-2.0, y=-3.0, z=0.0)
+        pose2.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg2.poses.append(pose2)
+
+        # waypoint 3
+        pose2 = Pose()
+        pose2.position = Point(x=3.0, y=-2.0, z=0.0)
+        pose2.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg2.poses.append(pose2)
+
+        # waypoint 4
+        pose2 = Pose()
+        pose2.position = Point(x=3.0, y=-3.0, z=0.0)
+        pose2.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg2.poses.append(pose2)
+
+
+
+
+        #pedestrian3
+        pose_array_msg3 = PoseArray()
+        pose_array_msg3.header.stamp = self.get_clock().now().to_msg()
+        pose_array_msg3.header.frame_id = "map"
+
+        # waypoint 1
+        pose3 = Pose()
+        pose3.position = Point(x=-3.0, y=0.0, z=0.0)
+        pose3.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg3.poses.append(pose3)
+
+        # waypoint 2
+        pose3 = Pose()
+        pose3.position = Point(x=-2.0, y=-3.0, z=0.0)
+        pose3.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg3.poses.append(pose3)
+
+        # waypoint 3
+        pose3 = Pose()
+        pose3.position = Point(x=3.0, y=-2.0, z=0.0)
+        pose3.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg3.poses.append(pose3)
+
+        # waypoint 4
+        pose3 = Pose()
+        pose3.position = Point(x=3.0, y=-3.0, z=0.0)
+        pose3.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg3.poses.append(pose3)
+
+
+
+
+        #pedestrian4
+        pose_array_msg4 = PoseArray()
+        pose_array_msg4.header.stamp = self.get_clock().now().to_msg()
+        pose_array_msg4.header.frame_id = "map"
+
+        # waypoint 1
+        pose4 = Pose()
+        pose4.position = Point(x=-3.0, y=0.0, z=0.0)
+        pose4.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg4.poses.append(pose4)
+
+        # waypoint 2
+        pose4 = Pose()
+        pose4.position = Point(x=-2.0, y=-3.0, z=0.0)
+        pose4.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg4.poses.append(pose4)
+
+        # waypoint 3
+        pose4 = Pose()
+        pose4.position = Point(x=3.0, y=-2.0, z=0.0)
+        pose4.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg4.poses.append(pose4)
+
+        # waypoint 4
+        pose4 = Pose()
+        pose4.position = Point(x=3.0, y=-3.0, z=0.0)
+        pose4.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        pose_array_msg4.poses.append(pose4)
+
+
+
         # Only publish once
         if self.published:
             return
@@ -31,32 +164,36 @@ class PoseArrayPublisher(Node):
         pose_array_msg.header.frame_id = "map"
         
         # Create the Pose messages for each waypoint
-        num_waypoints = 10  # Number of waypoints on the path
-        for i in range(num_waypoints):
-            pose = Pose()
-            
-            angle = i * (2 * math.pi / num_waypoints)
-            pose.position = Point(
-                x=2.0 * math.cos(angle), 
-                y=2.0 * math.sin(angle), 
-                z=0.0)
+        #num_waypoints = 10  # Number of waypoints on the path
+        #for i in range(num_waypoints):
+        #    pose = Pose()
+        #    
+        #    angle = i * (2 * math.pi / num_waypoints)
+        #    pose.position = Point(
+        #        x=2.0 * math.cos(angle), 
+        #        y=2.0 * math.sin(angle), 
+        #        z=0.0)
             
             # Calculate orientation (facing tangent to the circle)
-            tangent_angle = angle + (math.pi / 2.0)
+        #    tangent_angle = angle + (math.pi / 2.0)
             
             # Convert to quaternion
-            quat = self.euler_to_quaternion(0, 0, tangent_angle)
-            pose.orientation = Quaternion(
-                x=quat[0],
-                y=quat[1],
-                z=quat[2],
-                w=quat[3])
+        #    quat = self.euler_to_quaternion(0, 0, tangent_angle)
+        #    pose.orientation = Quaternion(
+        #        x=quat[0],
+        #        y=quat[1],
+        #        z=quat[2],
+        #        w=quat[3])
             
-            pose_array_msg.poses.append(pose)
+        #    pose_array_msg.poses.append(pose)
         
         # Publish the PoseArray message to the "/cmd_pose_array" topic
-        self.publisher.publish(pose_array_msg)
-        self.get_logger().info(f'Published PoseArray with {num_waypoints} poses')
+        self.publisher1.publish(pose_array_msg1)
+        self.publisher2.publish(pose_array_msg2)
+        self.publisher3.publish(pose_array_msg3)
+        self.publisher4.publish(pose_array_msg4)
+
+        #self.get_logger().info(f'Published PoseArray with {num_waypoints} poses')
         
         # Mark as published and cancel the timer
         self.published = True

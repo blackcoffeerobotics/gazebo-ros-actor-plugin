@@ -68,6 +68,7 @@ class GazeboRosActorCommand :
    double linTolerance_;
    double angTolerance_;
    double defaultRotation_;
+   double streetHeight_;
    std::queue<gz::math::Vector3d> cmdQueue_;
    std::queue<std::vector<gz::math::Vector3d>> pathQueue_;
    std::mutex mutex_;
